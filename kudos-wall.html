@@ -94,6 +94,17 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .presentation-mode .close-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 139, 59, 0.6); }
 
 .wall-view h3 { color: var(--evotix-navy); font-size: 18px; margin: 0 0 20px 0; font-weight: 600; }
+
+.password-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.password-modal.hidden { display: none; }
+.password-modal-content { background: var(--evotix-cream); border: 2px solid var(--evotix-purple); border-radius: 12px; padding: 32px; max-width: 320px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.password-modal h2 { margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: var(--evotix-navy); }
+.password-modal p { margin: 0 0 20px 0; font-size: 14px; color: #666; }
+.password-modal input { width: 100%; padding: 12px 14px; border: 2px solid var(--evotix-purple); border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+.password-modal input:focus { outline: none; border-color: var(--evotix-orange); box-shadow: 0 0 0 3px rgba(255, 139, 59, 0.1); }
+.password-modal .btn { width: 100%; margin-bottom: 8px; }
+.password-modal .btn:last-child { margin-bottom: 0; }
+.password-error { color: #E53E3E; font-size: 12px; margin-top: 8px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -162,10 +173,24 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 
 <div id="presentation-mode" style="display: none;"></div>
 
+<div class="password-modal hidden" id="password-modal">
+  <div class="password-modal-content">
+    <h2>🔐 Unlock</h2>
+    <p id="modal-message">Enter password to access</p>
+    <input type="password" id="password-input" placeholder="Password" />
+    <div class="password-error" id="password-error"></div>
+    <button class="btn primary" id="password-submit">Unlock</button>
+    <button class="btn" id="password-cancel">Back</button>
+  </div>
+</div>
+
 <script>
 const storage_key = 'csm-kudos-2026';
+const PASSWORD = 'QBRKudos'; // Change this to your desired password
 let selectedCategory = 'customer-hero';
 let selectedEmoji = '😎';
+let pendingView = null;
+let passwordAuthenticated = false;
 
 const categoryLabels = {
   'customer-hero': '💚 Customer Hero',
@@ -253,6 +278,12 @@ function exitPresentation() {
 }
 
 function switchView(view) {
+  if ((view === 'wall' || view === 'present') && !passwordAuthenticated) {
+    pendingView = view;
+    showPasswordModal(view);
+    return;
+  }
+  
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
   document.querySelector('.submit-view').style.display = view === 'submit' ? 'block' : 'none';
@@ -261,6 +292,27 @@ function switchView(view) {
   if (view === 'present') {
     renderPresentation();
   }
+}
+
+function showPasswordModal(view) {
+  const modal = document.getElementById('password-modal');
+  const message = document.getElementById('modal-message');
+  modal.classList.remove('hidden');
+  if (view === 'wall') {
+    message.textContent = 'View wall & manage kudos';
+  } else if (view === 'present') {
+    message.textContent = 'Present to team (full screen)';
+  }
+  document.getElementById('password-input').value = '';
+  document.getElementById('password-error').textContent = '';
+  document.getElementById('password-input').focus();
+}
+
+function hidePasswordModal() {
+  document.getElementById('password-modal').classList.add('hidden');
+  document.getElementById('password-input').value = '';
+  document.getElementById('password-error').textContent = '';
+  pendingView = null;
 }
 
 function clearErrors() {
@@ -346,6 +398,30 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   document.getElementById('name-input').value = '';
   document.getElementById('message-input').value = '';
   clearErrors();
+});
+
+document.getElementById('password-submit').addEventListener('click', () => {
+  const input = document.getElementById('password-input').value;
+  if (input === PASSWORD) {
+    passwordAuthenticated = true;
+    hidePasswordModal();
+    switchView(pendingView);
+  } else {
+    document.getElementById('password-error').textContent = 'Incorrect password';
+    document.getElementById('password-input').value = '';
+  }
+});
+
+document.getElementById('password-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('password-submit').click();
+  }
+});
+
+document.getElementById('password-cancel').addEventListener('click', () => {
+  hidePasswordModal();
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-view="submit"]').classList.add('active');
 });
 
 renderWall();
