@@ -112,7 +112,10 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .password-modal input:focus { outline: none; border-color: var(--evotix-orange); box-shadow: 0 0 0 3px rgba(255, 139, 59, 0.1); }
 .password-modal .btn { width: 100%; margin-bottom: 8px; }
 .password-modal .btn:last-child { margin-bottom: 0; }
-.password-error { color: #E53E3E; font-size: 12px; margin-top: 8px; font-weight: 500; }
+.success-toast { position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, var(--evotix-purple) 0%, var(--evotix-blue) 100%); color: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4); animation: slideIn 0.3s ease-out; z-index: 100; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+.success-toast i { font-size: 20px; }
+@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
 </style>
 </head>
 <body>
@@ -181,11 +184,15 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 
 <div id="presentation-mode" style="display: none;"></div>
 
+<div id="success-toast" class="success-toast" style="display: none;">
+  <span>✨ Thanks for your submission!</span>
+</div>
+
 <div class="password-modal hidden" id="password-modal">
   <div class="password-modal-content">
-    <h2>🔐 Unlock</h2>
-    <p id="modal-message">You don't have access to this view</p>
-    <p style="font-size: 12px; color: #999; margin: 0 0 16px 0;">Enter your password to proceed</p>
+    <h2>🔐 Restricted Access</h2>
+    <p id="modal-message" style="font-size: 14px; color: #E53E3E; font-weight: 600; margin: 0 0 8px 0;">Sorry, you don't have access to this view</p>
+    <p style="font-size: 12px; color: #999; margin: 0 0 16px 0;">Team leads & managers only. Enter password to proceed.</p>
     <input type="password" id="password-input" placeholder="Password" />
     <div class="password-error" id="password-error"></div>
     <button class="btn primary" id="password-submit">Unlock</button>
@@ -337,6 +344,18 @@ function hidePasswordModal() {
   pendingView = null;
 }
 
+function showSuccessToast() {
+  const toast = document.getElementById('success-toast');
+  toast.style.display = 'flex';
+  toast.style.animation = 'slideIn 0.3s ease-out';
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 300);
+  }, 2500);
+}
+
 function clearErrors() {
   document.getElementById('name-error').textContent = '';
   document.getElementById('message-error').textContent = '';
@@ -431,6 +450,9 @@ document.getElementById('submit-btn').addEventListener('click', () => {
   document.querySelector('.submit-view').style.display = 'none';
   document.querySelector('.wall-view').style.display = 'block';
   renderWall();
+  
+  // Show success toast
+  showSuccessToast();
 });
 
 document.getElementById('clear-btn').addEventListener('click', () => {
