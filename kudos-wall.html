@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QBR Kudos Wall - Evotix</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; }
+
+:root {
+  --evotix-navy: #0F1B3E;
+  --evotix-purple: #8B5CF6;
+  --evotix-purple-light: #A78BFA;
+  --evotix-blue: #3B82F6;
+  --evotix-orange: #FF8B3B;
+  --evotix-cream: #FFF8F0;
+}
+
+.app { display: flex; flex-direction: column; gap: 0; height: 100vh; }
+.nav { display: flex; gap: 8px; padding: 12px; background: linear-gradient(135deg, var(--evotix-navy) 0%, #1a2a5a 100%); border-bottom: 3px solid var(--evotix-purple); }
+.nav button { flex: 1; padding: 10px 12px; border: 2px solid transparent; background: rgba(255,255,255,0.1); color: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.3s; }
+.nav button:hover { background: rgba(139, 92, 246, 0.2); }
+.nav button.active { background: var(--evotix-purple); border-color: var(--evotix-orange); box-shadow: 0 0 12px rgba(255, 139, 59, 0.4); }
+
+.main { flex: 1; overflow-y: auto; padding: 16px; background: linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%); }
+
+.submit-panel { background: var(--evotix-cream); border: 2px solid var(--evotix-purple); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15); }
+.submit-panel h2 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; background: linear-gradient(135deg, var(--evotix-navy) 0%, var(--evotix-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.submit-panel .subtitle { margin: 0 0 16px 0; font-size: 13px; color: #666; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--evotix-navy); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input, .form-group textarea { width: 100%; padding: 12px 14px; border: 2px solid var(--evotix-purple); border-radius: 8px; font-family: inherit; font-size: 14px; background: #fff; color: var(--evotix-navy); transition: all 0.3s; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--evotix-orange); box-shadow: 0 0 0 3px rgba(255, 139, 59, 0.1); background: #fff; }
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+.category-pills { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.pill { padding: 10px 16px; border: 2px solid var(--evotix-purple); background: #fff; color: var(--evotix-navy); border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.3s; }
+.pill:hover { border-color: var(--evotix-orange); transform: translateY(-2px); }
+.pill.selected { background: linear-gradient(135deg, var(--evotix-purple) 0%, var(--evotix-purple-light) 100%); color: #fff; border-color: var(--evotix-orange); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
+
+.error-msg { font-size: 12px; color: #E53E3E; margin-top: 4px; font-weight: 500; }
+
+.button-row { display: flex; gap: 8px; }
+.btn { padding: 12px 20px; border: 2px solid var(--evotix-purple); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; background: #fff; color: var(--evotix-navy); transition: all 0.3s; }
+.btn:hover { border-color: var(--evotix-orange); transform: translateY(-2px); }
+.btn.primary { background: linear-gradient(135deg, var(--evotix-purple) 0%, var(--evotix-blue) 100%); color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4); }
+.btn.primary:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6); transform: translateY(-3px); }
+
+.wall { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.card { background: linear-gradient(135deg, #fff 0%, var(--evotix-cream) 100%); border: 2px solid var(--evotix-purple); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: default; }
+.card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 12px 32px rgba(139, 92, 246, 0.25); border-color: var(--evotix-orange); }
+
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, var(--evotix-purple) 0%, var(--evotix-blue) 100%); }
+.card.impact::before { background: linear-gradient(90deg, var(--evotix-orange) 0%, #FF6B35 100%); }
+.card.teamwork::before { background: linear-gradient(90deg, var(--evotix-purple) 0%, var(--evotix-purple-light) 100%); }
+.card.unsung::before { background: linear-gradient(90deg, var(--evotix-blue) 0%, #5B9BF6 100%); }
+
+.card-badge { position: absolute; top: 12px; right: 12px; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.card.impact .card-badge { background: var(--evotix-orange); }
+.card.teamwork .card-badge { background: var(--evotix-purple); }
+.card.unsung .card-badge { background: var(--evotix-blue); }
+
+.card-emoji { font-size: 32px; margin-bottom: 8px; display: inline-block; animation: bounce 2s infinite; }
+.card.impact .card-emoji { animation-delay: 0s; }
+.card.teamwork .card-emoji { animation-delay: 0.3s; }
+.card.unsung .card-emoji { animation-delay: 0.6s; }
+
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+.card-colleague { font-size: 16px; font-weight: 700; color: var(--evotix-navy); margin-bottom: 8px; line-height: 1.3; }
+.card-message { font-size: 14px; color: #444; line-height: 1.7; margin-bottom: 12px; }
+.card-footer { font-size: 12px; color: #999; font-weight: 500; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--evotix-navy); grid-column: 1/-1; }
+.empty-state-icon { font-size: 64px; margin-bottom: 16px; display: inline-block; animation: float 3s ease-in-out infinite; }
+.empty-state-text { font-size: 16px; line-height: 1.6; font-weight: 500; }
+
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+
+.presentation-mode { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, var(--evotix-navy) 0%, #1a2a5a 50%, var(--evotix-purple) 100%); display: flex; flex-direction: column; padding: 40px; overflow: auto; z-index: 1000; }
+.presentation-mode .title { font-size: 64px; font-weight: 700; color: #fff; text-align: center; margin-bottom: 8px; text-shadow: 0 4px 12px rgba(0,0,0,0.3); letter-spacing: -1px; }
+.presentation-mode .subtitle { font-size: 22px; color: var(--evotix-cream); text-align: center; margin-bottom: 16px; font-weight: 500; }
+.presentation-mode .tagline { font-size: 14px; color: rgba(255,255,255,0.7); text-align: center; margin-bottom: 48px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+.presentation-mode .wall { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; }
+.presentation-mode .card { background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%); backdrop-filter: blur(12px); border: 2px solid rgba(255,255,255,0.2); padding: 28px; }
+.presentation-mode .card:hover { transform: translateY(-12px) scale(1.03); border-color: var(--evotix-orange); }
+.presentation-mode .card-colleague { color: #fff; font-size: 18px; }
+.presentation-mode .card-message { color: rgba(255,255,255,0.95); font-size: 16px; }
+.presentation-mode .card-footer { color: rgba(255,255,255,0.6); }
+.presentation-mode .card-emoji { font-size: 44px; }
+.presentation-mode .close-btn { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, var(--evotix-orange) 0%, #FF6B35 100%); border: none; color: #fff; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 139, 59, 0.4); transition: all 0.3s; }
+.presentation-mode .close-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 139, 59, 0.6); }
+
+.wall-view h3 { color: var(--evotix-navy); font-size: 18px; margin: 0 0 20px 0; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="nav">
+    <button class="nav-btn active" data-view="submit">✨ Submit kudos</button>
+    <button class="nav-btn" data-view="wall">🎉 View wall</button>
+    <button class="nav-btn" data-view="present">🚀 Present</button>
+  </div>
+  
+  <div class="main">
+    <div class="submit-view">
+      <div class="submit-panel">
+        <h2>Celebrate your team</h2>
+        <p class="subtitle">Share a moment that made a difference this quarter</p>
+        <div class="form-group">
+          <label>Colleague's name</label>
+          <input type="text" id="name-input" placeholder="Who's the reliability partner here?" />
+          <div class="error-msg" id="name-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Your message</label>
+          <textarea id="message-input" placeholder="What did they do? Be specific and genuine."></textarea>
+          <div class="error-msg" id="message-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Impact category</label>
+          <div class="category-pills">
+            <button class="pill selected" data-category="impact">🎯 Impact</button>
+            <button class="pill" data-category="teamwork">🤝 Teamwork</button>
+            <button class="pill" data-category="unsung">⭐ Unsung hero</button>
+          </div>
+        </div>
+        <div class="button-row">
+          <button class="btn primary" id="submit-btn">Post to wall</button>
+          <button class="btn" id="clear-btn">Clear</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="wall-view" style="display: none;">
+      <h3>✨ The Kudos Wall</h3>
+      <div class="wall" id="wall-container"></div>
+    </div>
+  </div>
+</div>
+
+<div id="presentation-mode" style="display: none;"></div>
+
+<script>
+const storage_key = 'qbr-kudos-2026';
+let selectedCategory = 'impact';
+
+const emojiMap = {
+  impact: '🎯',
+  teamwork: '🤝',
+  unsung: '⭐'
+};
+
+function loadKudos() {
+  try {
+    const stored = localStorage.getItem(storage_key);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveKudos(kudos) {
+  try {
+    localStorage.setItem(storage_key, JSON.stringify(kudos));
+  } catch (err) {
+    console.error('Save failed:', err);
+  }
+}
+
+function renderWall() {
+  const container = document.getElementById('wall-container');
+  const kudos = loadKudos();
+  if (kudos.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌟</div><div class="empty-state-text">Be the first to celebrate your team.<br>Share a moment that mattered.</div></div>';
+    return;
+  }
+  container.innerHTML = kudos.map((k, i) => `
+    <div class="card ${k.category}">
+      <div class="card-badge">${k.category === 'impact' ? 'Impact' : k.category === 'teamwork' ? 'Teamwork' : 'Unsung hero'}</div>
+      <div class="card-emoji">${emojiMap[k.category]}</div>
+      <div class="card-colleague">${escapeHtml(k.name)}</div>
+      <div class="card-message">${escapeHtml(k.message)}</div>
+      <div class="card-footer">${new Date(k.timestamp).toLocaleDateString()}</div>
+    </div>
+  `).join('');
+}
+
+function renderPresentation() {
+  const kudos = loadKudos();
+  const presenter = document.getElementById('presentation-mode');
+  const cardsHtml = kudos.length === 0 
+    ? '<div class="empty-state" style="color: rgba(255,255,255,0.6);"><div class="empty-state-icon">🌟</div><div class="empty-state-text">No kudos yet.<br>Time to celebrate!</div></div>'
+    : kudos.map(k => `
+      <div class="card ${k.category}">
+        <div class="card-badge">${k.category === 'impact' ? 'Impact' : k.category === 'teamwork' ? 'Teamwork' : 'Unsung hero'}</div>
+        <div class="card-emoji">${emojiMap[k.category]}</div>
+        <div class="card-colleague">${escapeHtml(k.name)}</div>
+        <div class="card-message">${escapeHtml(k.message)}</div>
+        <div class="card-footer">${new Date(k.timestamp).toLocaleDateString()}</div>
+      </div>
+    `).join('');
+  
+  presenter.innerHTML = `
+    <div class="presentation-mode">
+      <button class="close-btn" onclick="exitPresentation()">Exit</button>
+      <div class="title">QBR Kudos Wall</div>
+      <div class="subtitle">Celebrating our reliability partners</div>
+      <div class="tagline">The Reliability Partner</div>
+      <div class="wall">${cardsHtml}</div>
+    </div>
+  `;
+  presenter.style.display = 'block';
+}
+
+function exitPresentation() {
+  document.getElementById('presentation-mode').style.display = 'none';
+  switchView('wall');
+}
+
+function switchView(view) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+  document.querySelector('.submit-view').style.display = view === 'submit' ? 'block' : 'none';
+  document.querySelector('.wall-view').style.display = view === 'wall' ? 'block' : 'none';
+  if (view === 'wall') renderWall();
+  if (view === 'present') {
+    renderPresentation();
+  }
+}
+
+function clearErrors() {
+  document.getElementById('name-error').textContent = '';
+  document.getElementById('message-error').textContent = '';
+}
+
+function showError(field, msg) {
+  document.getElementById(field + '-error').textContent = msg;
+}
+
+function validateForm() {
+  clearErrors();
+  const name = document.getElementById('name-input').value.trim();
+  const message = document.getElementById('message-input').value.trim();
+  let valid = true;
+  if (!name) {
+    showError('name', 'Please enter a name');
+    valid = false;
+  }
+  if (!message) {
+    showError('message', 'Please write a message');
+    valid = false;
+  }
+  return valid && { name, message };
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+document.querySelectorAll('.pill').forEach(pill => {
+  pill.addEventListener('click', (e) => {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+    e.target.classList.add('selected');
+    selectedCategory = e.target.dataset.category;
+  });
+});
+
+document.getElementById('submit-btn').addEventListener('click', () => {
+  const form = validateForm();
+  if (!form) return;
+  
+  const kudos = loadKudos();
+  kudos.unshift({
+    name: form.name,
+    message: form.message,
+    category: selectedCategory,
+    timestamp: new Date().toISOString()
+  });
+  
+  saveKudos(kudos);
+  document.getElementById('name-input').value = '';
+  document.getElementById('message-input').value = '';
+  selectedCategory = 'impact';
+  document.querySelectorAll('.pill').forEach((p, i) => {
+    p.classList.toggle('selected', i === 0);
+  });
+  
+  switchView('wall');
+  renderWall();
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('name-input').value = '';
+  document.getElementById('message-input').value = '';
+  clearErrors();
+});
+
+renderWall();
+</script>
+</body>
+</html>

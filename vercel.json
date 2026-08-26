@@ -1,0 +1,5 @@
+{
+  "buildCommand": "mkdir -p public && cp kudos-wall.html public/index.html",
+  "outputDirectory": "public",
+  "cleanUrls": true
+}
