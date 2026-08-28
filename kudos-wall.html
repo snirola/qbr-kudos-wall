@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Customer Heroes & Team Legends - Evotix CSM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; }
@@ -36,7 +37,6 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .form-group textarea { resize: vertical; min-height: 60px; }
 
 .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
-.category-pills { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .pill { padding: 10px 12px; border: 2px solid var(--evotix-purple); background: #fff; color: var(--evotix-navy); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s; text-align: center; line-height: 1.3; }
 .pill:hover { border-color: var(--evotix-orange); transform: translateY(-2px); }
 .pill.selected { background: linear-gradient(135deg, var(--evotix-purple) 0%, var(--evotix-purple-light) 100%); color: #fff; border-color: var(--evotix-orange); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
@@ -59,6 +59,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .wall::-webkit-scrollbar-track { background: transparent; }
 .wall::-webkit-scrollbar-thumb { background: var(--evotix-purple); border-radius: 4px; }
 .wall::-webkit-scrollbar-thumb:hover { background: var(--evotix-orange); }
+
 .card { background: linear-gradient(135deg, #fff 0%, var(--evotix-cream) 100%); border: 2px solid var(--evotix-purple); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: default; }
 .card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 12px 32px rgba(139, 92, 246, 0.25); border-color: var(--evotix-orange); }
 
@@ -73,10 +74,10 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .card-colleague { font-size: 15px; font-weight: 700; color: var(--evotix-navy); margin: 0 0 2px 0; line-height: 1.2; }
 .card-label { font-size: 11px; font-weight: 600; color: var(--evotix-purple); text-transform: uppercase; letter-spacing: 0.3px; margin: 0; }
 
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
 .card-message { font-size: 13px; color: #444; line-height: 1.6; margin-bottom: 10px; font-weight: 500; }
 .card-footer { font-size: 11px; color: #999; font-weight: 500; }
+
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 .empty-state { text-align: center; padding: 60px 20px; color: var(--evotix-navy); grid-column: 1/-1; }
 .empty-state-icon { font-size: 64px; margin-bottom: 16px; display: inline-block; animation: float 3s ease-in-out infinite; }
@@ -108,14 +109,20 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .password-modal-content { background: var(--evotix-cream); border: 2px solid var(--evotix-purple); border-radius: 12px; padding: 32px; max-width: 320px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
 .password-modal h2 { margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: var(--evotix-navy); }
 .password-modal p { margin: 0 0 20px 0; font-size: 14px; color: #666; }
+.password-modal p.error-access { color: #E53E3E; font-weight: 600; margin: 0 0 8px 0; }
 .password-modal input { width: 100%; padding: 12px 14px; border: 2px solid var(--evotix-purple); border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
 .password-modal input:focus { outline: none; border-color: var(--evotix-orange); box-shadow: 0 0 0 3px rgba(255, 139, 59, 0.1); }
 .password-modal .btn { width: 100%; margin-bottom: 8px; }
 .password-modal .btn:last-child { margin-bottom: 0; }
+.password-error { color: #E53E3E; font-size: 12px; margin-top: 8px; font-weight: 500; }
+
 .success-toast { position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, var(--evotix-purple) 0%, var(--evotix-blue) 100%); color: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4); animation: slideIn 0.3s ease-out; z-index: 100; font-weight: 600; display: flex; align-items: center; gap: 12px; }
-.success-toast i { font-size: 20px; }
 @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+
+.loading { text-align: center; padding: 20px; color: var(--evotix-navy); }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--evotix-purple); border-top-color: var(--evotix-orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -191,7 +198,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 <div class="password-modal hidden" id="password-modal">
   <div class="password-modal-content">
     <h2>🔐 Restricted Access</h2>
-    <p id="modal-message" style="font-size: 14px; color: #E53E3E; font-weight: 600; margin: 0 0 8px 0;">Sorry, you don't have access to this view</p>
+    <p class="error-access">Sorry, you don't have access to this view</p>
     <p style="font-size: 12px; color: #999; margin: 0 0 16px 0;">Team leads & managers only. Enter password to proceed.</p>
     <input type="password" id="password-input" placeholder="Password" />
     <div class="password-error" id="password-error"></div>
@@ -201,12 +208,17 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 </div>
 
 <script>
-const storage_key = 'csm-kudos-2026';
-const PASSWORD = 'QBRKudos'; // Change this to your desired password
+// Supabase Configuration
+const SUPABASE_URL = 'https://qcgwwgehplbhqpslaxoj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_XlBvR3TC4VN5hNl0NJqlMg_pfrAcEtf';
+const PASSWORD = 'QBRKudos';
+
+let supabase = null;
 let selectedCategory = 'customer-hero';
 let selectedEmoji = '😎';
 let pendingView = null;
 let passwordAuthenticated = false;
+let allKudos = [];
 
 const categoryLabels = {
   'customer-hero': '💚 Customer Hero',
@@ -217,44 +229,71 @@ const categoryLabels = {
   'easier': '✨ Made Life Easier'
 };
 
-function loadKudos() {
+// Initialize Supabase
+function initSupabase() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_KEY === 'YOUR_SUPABASE_KEY') {
+    console.error('Supabase credentials not configured. Using demo mode.');
+    return false;
+  }
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return true;
+}
+
+async function loadKudos() {
+  if (!supabase) {
+    return JSON.parse(localStorage.getItem('kudos-demo') || '[]');
+  }
   try {
-    const stored = localStorage.getItem(storage_key);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    // Ensure it's an array
-    return Array.isArray(parsed) ? parsed : [];
+    const { data, error } = await supabase
+      .from('kudos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   } catch (err) {
     console.error('Load error:', err);
     return [];
   }
 }
 
-function saveKudos(kudos) {
+async function saveKudos(kudo) {
+  if (!supabase) {
+    const demo = JSON.parse(localStorage.getItem('kudos-demo') || '[]');
+    demo.unshift(kudo);
+    localStorage.setItem('kudos-demo', JSON.stringify(demo));
+    return true;
+  }
   try {
-    // Ensure we're saving an array
-    if (!Array.isArray(kudos)) {
-      console.error('Invalid kudos format');
-      return;
-    }
-    localStorage.setItem(storage_key, JSON.stringify(kudos));
+    const { error } = await supabase
+      .from('kudos')
+      .insert([{
+        name: kudo.name,
+        message: kudo.message,
+        category: kudo.category,
+        emoji: kudo.emoji,
+        created_at: kudo.timestamp
+      }]);
+    
+    if (error) throw error;
+    return true;
   } catch (err) {
-    console.error('Save failed:', err);
-    // Show user-friendly error
-    if (err.name === 'QuotaExceededError') {
-      alert('Storage full! Please clear old submissions or use a different browser.');
-    }
+    console.error('Save error:', err);
+    return false;
   }
 }
 
-function renderWall() {
+async function renderWall() {
   const container = document.getElementById('wall-container');
-  const kudos = loadKudos();
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  const kudos = await loadKudos();
   if (kudos.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌟</div><div class="empty-state-text">No legends yet.<br>Be the first to celebrate a teammate.</div></div>';
     return;
   }
-  container.innerHTML = kudos.map((k, i) => `
+  
+  container.innerHTML = kudos.map(k => `
     <div class="card">
       <div class="card-category">${categoryLabels[k.category] || k.category}</div>
       <div class="card-header">
@@ -265,14 +304,15 @@ function renderWall() {
         </div>
       </div>
       <div class="card-message">${escapeHtml(k.message)}</div>
-      <div class="card-footer">${new Date(k.timestamp).toLocaleDateString()}</div>
+      <div class="card-footer">${new Date(k.created_at || k.timestamp).toLocaleDateString()}</div>
     </div>
   `).join('');
 }
 
-function renderPresentation() {
-  const kudos = loadKudos();
+async function renderPresentation() {
+  const kudos = await loadKudos();
   const presenter = document.getElementById('presentation-mode');
+  
   const cardsHtml = kudos.length === 0 
     ? '<div class="empty-state" style="color: rgba(255,255,255,0.6);"><div class="empty-state-icon">🌟</div><div class="empty-state-text">No legends yet.<br>Time to celebrate!</div></div>'
     : kudos.map(k => `
@@ -286,7 +326,7 @@ function renderPresentation() {
           </div>
         </div>
         <div class="card-message">${escapeHtml(k.message)}</div>
-        <div class="card-footer">${new Date(k.timestamp).toLocaleDateString()}</div>
+        <div class="card-footer">${new Date(k.created_at || k.timestamp).toLocaleDateString()}</div>
       </div>
     `).join('');
   
@@ -318,20 +358,12 @@ function switchView(view) {
   document.querySelector('.submit-view').style.display = view === 'submit' ? 'block' : 'none';
   document.querySelector('.wall-view').style.display = view === 'wall' ? 'block' : 'none';
   if (view === 'wall') renderWall();
-  if (view === 'present') {
-    renderPresentation();
-  }
+  if (view === 'present') renderPresentation();
 }
 
 function showPasswordModal(view) {
   const modal = document.getElementById('password-modal');
-  const message = document.getElementById('modal-message');
   modal.classList.remove('hidden');
-  if (view === 'wall') {
-    message.textContent = 'View wall & manage kudos';
-  } else if (view === 'present') {
-    message.textContent = 'Present to team (full screen)';
-  }
   document.getElementById('password-input').value = '';
   document.getElementById('password-error').textContent = '';
   document.getElementById('password-input').focus();
@@ -354,6 +386,11 @@ function showSuccessToast() {
       toast.style.display = 'none';
     }, 300);
   }, 2500);
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function clearErrors() {
@@ -381,11 +418,7 @@ function validateForm() {
   return valid && { name, message };
 }
 
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, m => map[m]);
-}
-
+// Event Listeners
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
@@ -406,12 +439,11 @@ document.querySelectorAll('.emoji-btn').forEach(btn => {
   });
 });
 
-document.getElementById('submit-btn').addEventListener('click', () => {
+document.getElementById('submit-btn').addEventListener('click', async () => {
   const form = validateForm();
   if (!form) return;
   
-  const kudos = loadKudos();
-  const newKudo = {
+  const kudo = {
     name: form.name,
     message: form.message,
     category: selectedCategory,
@@ -419,20 +451,12 @@ document.getElementById('submit-btn').addEventListener('click', () => {
     timestamp: new Date().toISOString()
   };
   
-  // Add to array
-  kudos.unshift(newKudo);
-  
-  // Save and verify
-  saveKudos(kudos);
-  const verification = loadKudos();
-  console.log(`Saved ${kudos.length} kudos, verified: ${verification.length}`);
-  
-  if (verification.length !== kudos.length) {
-    alert('Warning: Save verification failed. Please try again.');
+  const saved = await saveKudos(kudo);
+  if (!saved) {
+    alert('Error saving. Please try again.');
     return;
   }
   
-  // Clear form
   document.getElementById('name-input').value = '';
   document.getElementById('message-input').value = '';
   selectedCategory = 'customer-hero';
@@ -444,14 +468,11 @@ document.getElementById('submit-btn').addEventListener('click', () => {
     b.classList.toggle('selected', i === 0);
   });
   
-  // Go directly to wall WITHOUT password
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`[data-view="wall"]`).classList.add('active');
   document.querySelector('.submit-view').style.display = 'none';
   document.querySelector('.wall-view').style.display = 'block';
-  renderWall();
-  
-  // Show success toast
+  await renderWall();
   showSuccessToast();
 });
 
@@ -487,6 +508,8 @@ document.getElementById('password-cancel').addEventListener('click', () => {
   document.querySelector('.wall-view').style.display = 'none';
 });
 
+// Initialize
+initSupabase();
 renderWall();
 </script>
 </body>
