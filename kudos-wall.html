@@ -152,6 +152,7 @@ body { font-family: system-ui, sans-serif; background: #f5f5f5; }
 <script>
 const PASSWORD = 'QBRKudos';
 const KEY = 'kudos-wall-data';
+const API_URL = 'https://script.google.com/macros/s/AKfycbww0gw5bAgVBPGJizQ1ZGhnqkwg1-vFEbbF7oWVJBFhQ_tRbair2WLqxOKweytiWJsa/exec';
 
 let category = 'hero';
 let emoji = '😎';
@@ -166,33 +167,34 @@ const CATS = {
   easier: '✨ Made Life Easier'
 };
 
-function getAll() {
+async function getAll() {
   try {
-    const data = localStorage.getItem(KEY);
-    if (data) return JSON.parse(data);
-    
-    // Initialize with previous kudos on first load
-    const initial = [
-      { name: 'Holly Fielder', msg: 'Thanks for being a great bounce partner on the e-Cloud scenarios on finance front!', cat: 'brain', emoji: '⭐', date: '2026-07-27T00:00:00.000Z' },
-      { name: 'Agata, Julia, Marcus', msg: 'Thanks for all your efforts and thoughts on the sql telemetry/usage data piece! As a result weve got some really great insight and asks that have been shared and are in discussion with Product and Engineering.', cat: 'brain', emoji: '🚀', date: '2026-07-27T00:00:00.000Z' },
-      { name: 'Steph', msg: 'Way to push the Warburtons piece and get the buy-in internally to support some of their recent challenges with responsiveness at key moments.', cat: 'hero', emoji: '😎', date: '2026-07-27T00:00:00.000Z' },
-      { name: 'Natalie', msg: 'Excellent sharp eyes on Salesforce! Thanks for always flagging any of the challenges to make sure we are aware (and stop the suffering for others) and allowing us to get the push onto RevOps to fix!', cat: 'team', emoji: '🦸', date: '2026-07-27T00:00:00.000Z' },
-      { name: 'Tanya', msg: 'The ask on the Allego keywords piece triggered off another set of thoughts on what we could do for improvements in our Risk captures. Thanks for bringing this up!', cat: 'easier', emoji: '😎', date: '2026-07-27T00:00:00.000Z' },
-      { name: 'Kirsty', msg: 'There have been a few occasions where Ive needed some information on Accounts at short notice and youve always been there with a quick response - thank you!', cat: 'team', emoji: '⭐', date: '2026-07-27T00:00:00.000Z' }
-    ];
-    
-    save(initial);
-    return initial;
+    // Try to fetch from backend
+    const response = await fetch(API_URL);
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
   } catch(e) {
-    return [];
+    console.log('Backend fetch failed, using local cache');
   }
+  
+  // Fall back to local storage
+  try {
+    const stored = localStorage.getItem(KEY);
+    if (stored) return JSON.parse(stored);
+  } catch(e) {
+    console.log('Local storage error');
+  }
+  
+  return [];
 }
 
 function save(all) {
   localStorage.setItem(KEY, JSON.stringify(all));
 }
 
-function switchTab(e, tab) {
+async function switchTab(e, tab) {
   if ((tab === 'wall' || tab === 'present') && !auth) {
     document.getElementById('passwordModal').classList.add('show');
     document.getElementById('passwordInput').focus();
@@ -205,12 +207,12 @@ function switchTab(e, tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
   
-  if (tab === 'wall') renderWall();
-  if (tab === 'present') renderPresent();
+  if (tab === 'wall') await renderWall();
+  if (tab === 'present') await renderPresent();
 }
 
-function renderWall() {
-  const all = getAll();
+async function renderWall() {
+  const all = await getAll();
   const container = document.getElementById('wallContainer');
   
   if (all.length === 0) {
@@ -222,15 +224,15 @@ function renderWall() {
     <div class="card">
       <div style="font-size:40px;margin-bottom:10px;">${k.emoji}</div>
       <div class="card-name">${k.name}</div>
-      <div class="card-category">${CATS[k.cat]}</div>
-      <div class="card-message">${k.msg}</div>
+      <div class="card-category">${CATS[k.category] || k.category}</div>
+      <div class="card-message">${k.message || k.msg}</div>
       <div style="font-size:11px;color:#999;margin-top:10px;">${new Date(k.date).toLocaleDateString()}</div>
     </div>
   `).join('');
 }
 
-function renderPresent() {
-  const all = getAll();
+async function renderPresent() {
+  const all = await getAll();
   const wall = document.getElementById('presentWall');
   
   if (all.length === 0) {
@@ -243,8 +245,8 @@ function renderPresent() {
     <div class="card">
       <div style="font-size:40px;margin-bottom:10px;">${k.emoji}</div>
       <div class="card-name">${k.name}</div>
-      <div class="card-category">${CATS[k.cat]}</div>
-      <div class="card-message">${k.msg}</div>
+      <div class="card-category">${CATS[k.category] || k.category}</div>
+      <div class="card-message">${k.message || k.msg}</div>
     </div>
   `).join('');
   
@@ -256,7 +258,7 @@ function exitPresentation() {
   auth = false;
 }
 
-function checkPassword() {
+async function checkPassword() {
   const pwd = document.getElementById('passwordInput').value;
   
   if (pwd === PASSWORD) {
@@ -270,9 +272,9 @@ function checkPassword() {
       document.getElementById('wall').classList.add('active');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-btn')[1].classList.add('active');
-      renderWall();
+      await renderWall();
     } else if (action === 'present') {
-      renderPresent();
+      await renderPresent();
     }
   } else {
     document.getElementById('passwordError').textContent = 'Wrong password';
@@ -286,7 +288,7 @@ function closePasswordModal() {
   document.getElementById('passwordError').textContent = '';
 }
 
-function submitKudos() {
+async function submitKudos() {
   const name = document.getElementById('nameInput').value.trim();
   const msg = document.getElementById('messageInput').value.trim();
   
@@ -296,21 +298,39 @@ function submitKudos() {
   if (!name) { document.getElementById('nameError').textContent = 'Required'; return; }
   if (!msg) { document.getElementById('messageError').textContent = 'Required'; return; }
   
-  const all = getAll();
-  all.unshift({ name, msg, cat: category, emoji, date: new Date().toISOString() });
-  save(all);
-  
-  clearForm();
-  
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('wall').classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-btn')[1].classList.add('active');
-  
-  renderWall();
-  
-  document.getElementById('toast').classList.add('show');
-  setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
+  try {
+    // Send to backend
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: name,
+        message: msg,
+        category: category,
+        emoji: emoji
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      clearForm();
+      
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('wall').classList.add('active');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      
+      await renderWall();
+      
+      document.getElementById('toast').classList.add('show');
+      setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
+    } else {
+      document.getElementById('messageError').textContent = 'Error posting. Try again.';
+    }
+  } catch(e) {
+    console.log('Submit error:', e);
+    document.getElementById('messageError').textContent = 'Connection error. Try again.';
+  }
 }
 
 function clearForm() {
