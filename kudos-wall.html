@@ -5,143 +5,132 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#f5f5f5}
-.container{max-width:1200px;margin:0 auto}
-.header{background:linear-gradient(135deg,#0F1B3E 0%,#8B5CF6 100%);color:white;padding:20px;text-align:center}
-.header h1{font-size:32px;margin:0}
-.tabs{display:flex;gap:10px;padding:15px;background:white;border-bottom:2px solid #8B5CF6}
-.tab-btn{padding:10px 20px;border:2px solid #8B5CF6;background:white;color:#0F1B3E;cursor:pointer;border-radius:6px;font-weight:600;flex:1}
-.tab-btn.active{background:#8B5CF6;color:white}
-.content{padding:20px;background:white;min-height:calc(100vh - 200px)}
-.section{display:none}
-.section.active{display:block}
-.form-group{margin-bottom:15px}
-.form-group label{display:block;font-weight:600;margin-bottom:5px;color:#0F1B3E}
-.form-group input,.form-group textarea{width:100%;padding:10px;border:2px solid #8B5CF6;border-radius:6px;font-family:inherit;font-size:14px}
-.form-group textarea{min-height:60px;resize:vertical}
-.form-group input:focus,.form-group textarea:focus{outline:none;border-color:#FF8B3B;box-shadow:0 0 0 3px rgba(255,139,59,0.1)}
-.error{color:#E53E3E;font-size:12px;margin-top:3px}
-.category-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:10px 0}
-.category-btn{padding:10px;border:2px solid #8B5CF6;background:white;cursor:pointer;border-radius:6px;text-align:center;font-weight:600;color:#0F1B3E}
-.category-btn.selected{background:#8B5CF6;color:white;border-color:#FF8B3B}
-.emoji-options{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.emoji-btn{width:50px;height:50px;border:2px solid #8B5CF6;background:white;cursor:pointer;border-radius:6px;font-size:24px;display:flex;align-items:center;justify-content:center}
-.emoji-btn.selected{background:#8B5CF6;border-color:#FF8B3B}
-.buttons{display:flex;gap:10px;margin-top:20px}
-.btn{padding:12px 20px;border:2px solid #8B5CF6;background:white;color:#0F1B3E;cursor:pointer;border-radius:6px;font-weight:600;flex:1}
-.btn-primary{background:#8B5CF6;color:white;border-color:#FF8B3B}
-.btn:hover{opacity:0.9}
-.wall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:20px}
-.card{background:linear-gradient(135deg,#fff 0%,#FFF8F0 100%);border:2px solid #8B5CF6;border-radius:12px;padding:20px;position:relative}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:#8B5CF6}
-.card-badge{position:absolute;top:12px;right:12px;background:#8B5CF6;color:white;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700}
-.card-name{font-size:18px;font-weight:700;color:#0F1B3E;margin-top:10px}
-.card-category{font-size:12px;color:#8B5CF6;font-weight:600;margin-top:4px}
-.card-message{font-size:14px;color:#444;margin-top:12px;line-height:1.5}
-.card-date{font-size:11px;color:#999;margin-top:12px}
-.card-emoji{font-size:40px;float:left;margin-right:10px}
-.empty{text-align:center;padding:40px;color:#999;font-size:16px}
-.empty-icon{font-size:64px;margin-bottom:20px}
-.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center}
-.modal.show{display:flex}
-.modal-content{background:white;border:2px solid #8B5CF6;border-radius:12px;padding:40px;max-width:350px;text-align:center}
-.modal-content h2{color:#0F1B3E;margin-bottom:10px}
-.modal-content p{color:#666;margin-bottom:20px}
-.modal-content input{width:100%;padding:10px;border:2px solid #8B5CF6;border-radius:6px;margin-bottom:15px;font-size:14px}
-.modal-content .error{color:#E53E3E;margin-bottom:15px}
-.modal-buttons{display:flex;gap:10px}
-.modal-buttons button{flex:1;padding:10px;border:2px solid #8B5CF6;background:white;cursor:pointer;border-radius:6px;font-weight:600}
-.modal-buttons .btn-primary{background:#8B5CF6;color:white}
-.toast{position:fixed;bottom:20px;right:20px;background:#8B5CF6;color:white;padding:15px 20px;border-radius:8px;font-weight:600;display:none;z-index:2000}
-.toast.show{display:block}
-.loading{text-align:center;padding:20px;color:#666}
-.spinner{display:inline-block;width:20px;height:20px;border:3px solid #8B5CF6;border-top-color:#FF8B3B;border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.present-mode{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#0F1B3E 0%,#1a2a5a 50%,#8B5CF6 100%);z-index:2000;display:none;flex-direction:column;padding:30px;overflow-y:auto}
-.present-mode.show{display:flex}
-.present-title{font-size:56px;color:white;text-align:center;margin-bottom:10px;font-weight:700}
-.present-tagline{font-size:24px;color:#FFF8F0;text-align:center;margin-bottom:30px}
-.present-close{position:absolute;top:20px;right:20px;background:#FF8B3B;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f5f5f5; }
+.header { background: linear-gradient(135deg, #0F1B3E 0%, #8B5CF6 100%); color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 32px; }
+.tabs { display: flex; gap: 10px; padding: 15px; background: white; }
+.tab-btn { flex: 1; padding: 10px 20px; border: 2px solid #8B5CF6; background: white; color: #0F1B3E; cursor: pointer; border-radius: 6px; font-weight: 600; }
+.tab-btn.active { background: #8B5CF6; color: white; }
+.content { padding: 20px; background: white; max-width: 1200px; margin: 0 auto; }
+.section { display: none; }
+.section.active { display: block; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #0F1B3E; }
+.form-group input, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #8B5CF6; border-radius: 6px; font-family: inherit; }
+.form-group textarea { min-height: 60px; }
+.category-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin: 10px 0; }
+.category-btn { padding: 10px; border: 2px solid #8B5CF6; background: white; cursor: pointer; border-radius: 6px; text-align: center; font-weight: 600; }
+.category-btn.selected { background: #8B5CF6; color: white; }
+.emoji-options { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.emoji-btn { width: 50px; height: 50px; border: 2px solid #8B5CF6; background: white; cursor: pointer; border-radius: 6px; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+.emoji-btn.selected { background: #8B5CF6; }
+.buttons { display: flex; gap: 10px; margin-top: 20px; }
+.btn { flex: 1; padding: 12px 20px; border: 2px solid #8B5CF6; background: white; color: #0F1B3E; cursor: pointer; border-radius: 6px; font-weight: 600; }
+.btn-primary { background: #8B5CF6; color: white; }
+.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+.card { background: linear-gradient(135deg, #fff 0%, #FFF8F0 100%); border: 2px solid #8B5CF6; border-radius: 12px; padding: 20px; }
+.card-badge { position: absolute; top: 10px; right: 10px; background: #8B5CF6; color: white; padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+.card-name { font-size: 18px; font-weight: 700; color: #0F1B3E; margin: 10px 0; }
+.card-category { font-size: 12px; color: #8B5CF6; font-weight: 600; }
+.card-message { font-size: 14px; color: #444; margin: 10px 0; line-height: 1.5; }
+.card-emoji { font-size: 40px; margin-bottom: 10px; }
+.empty { text-align: center; padding: 40px; color: #999; }
+.empty-icon { font-size: 64px; margin-bottom: 20px; }
+.error { color: #E53E3E; font-size: 12px; margin-top: 3px; }
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: white; border: 2px solid #8B5CF6; border-radius: 12px; padding: 40px; max-width: 350px; text-align: center; }
+.modal-content h2 { color: #0F1B3E; margin-bottom: 10px; }
+.modal-content input { width: 100%; padding: 10px; border: 2px solid #8B5CF6; border-radius: 6px; margin-bottom: 15px; }
+.modal-buttons { display: flex; gap: 10px; }
+.modal-buttons button { flex: 1; padding: 10px; border: 2px solid #8B5CF6; background: white; cursor: pointer; border-radius: 6px; font-weight: 600; }
+.modal-buttons .btn-primary { background: #8B5CF6; color: white; }
+.toast { position: fixed; bottom: 20px; right: 20px; background: #8B5CF6; color: white; padding: 15px 20px; border-radius: 8px; font-weight: 600; display: none; z-index: 2000; }
+.toast.show { display: block; }
+.present { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0F1B3E 0%, #8B5CF6 100%); display: none; flex-direction: column; padding: 30px; overflow-y: auto; z-index: 2000; }
+.present.show { display: flex; }
+.present-title { font-size: 56px; color: white; text-align: center; margin-bottom: 10px; font-weight: 700; }
+.present-tagline { font-size: 24px; color: #FFF8F0; text-align: center; margin-bottom: 30px; }
+.present-close { position: absolute; top: 20px; right: 20px; background: #FF8B3B; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.present .wall { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.present .card { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+.present .card-name { color: white; }
+.present .card-message { color: rgba(255,255,255,0.95); }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <h1>🏆 Customer Heroes & Team Legends</h1>
-  </div>
+<div class="header">
+  <h1>🏆 Customer Heroes & Team Legends</h1>
+</div>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('submit')">✨ Submit Kudos</button>
-    <button class="tab-btn" onclick="switchTab('wall')">🎉 View Wall</button>
-    <button class="tab-btn" onclick="switchTab('present')">🚀 Present</button>
-  </div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(event, 'submit')">✨ Submit</button>
+  <button class="tab-btn" onclick="switchTab(event, 'wall')">🎉 Wall</button>
+  <button class="tab-btn" onclick="switchTab(event, 'present')">🚀 Present</button>
+</div>
 
-  <div class="content">
-    <!-- SUBMIT SECTION -->
-    <div class="section active" id="submit">
-      <h2>🏆 Shout Out a Legend</h2>
-      <p style="color:#666;margin-bottom:20px">Who made an impact this quarter?</p>
-      
-      <div class="form-group">
-        <label>Teammate Name:</label>
-        <input type="text" id="nameInput" placeholder="Enter their name">
-        <div class="error" id="nameError"></div>
-      </div>
+<div class="content">
+  <div class="section active" id="submit">
+    <h2>🏆 Shout Out a Legend</h2>
+    <p style="color:#666;margin-bottom:20px">Who made an impact this quarter?</p>
+    
+    <div class="form-group">
+      <label>Teammate Name:</label>
+      <input type="text" id="nameInput" placeholder="Enter their name">
+      <div class="error" id="nameError"></div>
+    </div>
 
-      <div class="form-group">
-        <label>What Did They Do?</label>
-        <textarea id="messageInput" placeholder="One sentence - keep it punchy!"></textarea>
-        <div class="error" id="messageError"></div>
-      </div>
+    <div class="form-group">
+      <label>What Did They Do?</label>
+      <textarea id="messageInput" placeholder="One sentence - keep it punchy!"></textarea>
+      <div class="error" id="messageError"></div>
+    </div>
 
-      <div class="form-group">
-        <label>Category:</label>
-        <div class="category-options">
-          <button class="category-btn selected" data-cat="hero">💚 Hero</button>
-          <button class="category-btn" data-cat="save">🚨 Save</button>
-          <button class="category-btn" data-cat="team">🤝 Team</button>
-          <button class="category-btn" data-cat="brain">🧠 Brain</button>
-          <button class="category-btn" data-cat="unsung">🕵️ Unsung</button>
-          <button class="category-btn" data-cat="easier">✨ Easier</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Pick Your Emoji:</label>
-        <div class="emoji-options">
-          <button class="emoji-btn selected" data-emoji="😎">😎</button>
-          <button class="emoji-btn" data-emoji="🚀">🚀</button>
-          <button class="emoji-btn" data-emoji="🦸">🦸</button>
-          <button class="emoji-btn" data-emoji="🔥">🔥</button>
-          <button class="emoji-btn" data-emoji="⭐">⭐</button>
-          <button class="emoji-btn" data-emoji="💪">💪</button>
-        </div>
-      </div>
-
-      <div class="buttons">
-        <button class="btn btn-primary" onclick="submitKudos()">Post to Wall</button>
-        <button class="btn" onclick="clearForm()">Clear</button>
+    <div class="form-group">
+      <label>Category:</label>
+      <div class="category-options">
+        <button class="category-btn selected" data-cat="hero">💚 Hero</button>
+        <button class="category-btn" data-cat="save">🚨 Save</button>
+        <button class="category-btn" data-cat="team">🤝 Team</button>
+        <button class="category-btn" data-cat="brain">🧠 Brain</button>
+        <button class="category-btn" data-cat="unsung">🕵️ Unsung</button>
+        <button class="category-btn" data-cat="easier">✨ Easier</button>
       </div>
     </div>
 
-    <!-- WALL SECTION -->
-    <div class="section" id="wall">
-      <h2>🏆 Customer Heroes & Team Legends</h2>
-      <div class="wall-grid" id="wallContainer">
-        <div class="loading"><div class="spinner"></div> Loading kudos...</div>
+    <div class="form-group">
+      <label>Emoji:</label>
+      <div class="emoji-options">
+        <button class="emoji-btn selected" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="🚀">🚀</button>
+        <button class="emoji-btn" data-emoji="🦸">🦸</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="⭐">⭐</button>
+        <button class="emoji-btn" data-emoji="💪">💪</button>
       </div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-primary" onclick="submitKudos()">Post to Wall</button>
+      <button class="btn" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <div class="section" id="wall">
+    <h2>🏆 Customer Heroes & Team Legends</h2>
+    <div class="wall" id="wallContainer">
+      <div class="empty"><div class="empty-icon">🌟</div>No kudos yet. Be the first!</div>
     </div>
   </div>
 </div>
 
-<!-- PASSWORD MODAL -->
 <div class="modal" id="passwordModal">
   <div class="modal-content">
-    <h2>🔐 Restricted Access</h2>
-    <p style="color:#E53E3E;font-weight:600">Sorry, you don't have access</p>
-    <p style="font-size:12px;color:#999">Team leads only. Enter password.</p>
+    <h2>🔐 Restricted</h2>
+    <p style="color:#E53E3E;font-weight:600">You don't have access</p>
+    <p style="font-size:12px;color:#999">Team leads only</p>
     <input type="password" id="passwordInput" placeholder="Password">
     <div class="error" id="passwordError"></div>
     <div class="modal-buttons">
@@ -151,29 +140,24 @@ body{font-family:system-ui,sans-serif;background:#f5f5f5}
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast">✨ Thanks for your submission!</div>
+<div class="toast" id="toast">✨ Thanks!</div>
 
-<!-- PRESENTATION MODE -->
-<div class="present-mode" id="presentMode">
+<div class="present" id="presentMode">
   <button class="present-close" onclick="exitPresentation()">Exit</button>
-  <div class="present-title">🏆 Customer Heroes & Team Legends</div>
+  <div class="present-title">🏆 Customer Heroes</div>
   <div class="present-tagline">Celebrating our squad</div>
-  <div class="wall-grid" id="presentContainer" style="margin-top:30px">
-    <div class="loading"><div class="spinner"></div> Loading...</div>
-  </div>
+  <div class="wall" id="presentWall"></div>
 </div>
 
 <script>
 const PASSWORD = 'QBRKudos';
-const API_URL = 'https://sheet.best/api/sheets/f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0';
+const KEY = 'kudos-wall-data';
 
-let selectedCategory = 'hero';
-let selectedEmoji = '😎';
-let passwordProtected = false;
-let pendingAction = null;
+let category = 'hero';
+let emoji = '😎';
+let auth = false;
 
-const CATEGORIES = {
+const CATS = {
   hero: '💚 Customer Hero',
   save: '🚨 Save of Quarter',
   team: '🤝 Ultimate Teammate',
@@ -182,101 +166,85 @@ const CATEGORIES = {
   easier: '✨ Made Life Easier'
 };
 
-async function getKudos() {
+function getAll() {
   try {
-    const response = await fetch(API_URL);
-    const data = await response.json();
-    return data || [];
+    const data = localStorage.getItem(KEY);
+    if (data) return JSON.parse(data);
+    
+    // Initialize with previous kudos on first load
+    const initial = [
+      { name: 'Holly Fielder', msg: 'Thanks for being a great bounce partner on the e-Cloud scenarios on finance front!', cat: 'brain', emoji: '⭐', date: '2026-07-27T00:00:00.000Z' },
+      { name: 'Agata, Julia, Marcus', msg: 'Thanks for all your efforts and thoughts on the sql telemetry/usage data piece! As a result weve got some really great insight and asks that have been shared and are in discussion with Product and Engineering.', cat: 'brain', emoji: '🚀', date: '2026-07-27T00:00:00.000Z' },
+      { name: 'Steph', msg: 'Way to push the Warburtons piece and get the buy-in internally to support some of their recent challenges with responsiveness at key moments.', cat: 'hero', emoji: '😎', date: '2026-07-27T00:00:00.000Z' },
+      { name: 'Natalie', msg: 'Excellent sharp eyes on Salesforce! Thanks for always flagging any of the challenges to make sure we are aware (and stop the suffering for others) and allowing us to get the push onto RevOps to fix!', cat: 'team', emoji: '🦸', date: '2026-07-27T00:00:00.000Z' },
+      { name: 'Tanya', msg: 'The ask on the Allego keywords piece triggered off another set of thoughts on what we could do for improvements in our Risk captures. Thanks for bringing this up!', cat: 'easier', emoji: '😎', date: '2026-07-27T00:00:00.000Z' },
+      { name: 'Kirsty', msg: 'There have been a few occasions where Ive needed some information on Accounts at short notice and youve always been there with a quick response - thank you!', cat: 'team', emoji: '⭐', date: '2026-07-27T00:00:00.000Z' }
+    ];
+    
+    save(initial);
+    return initial;
   } catch(e) {
-    console.log('Error fetching kudos:', e);
     return [];
   }
 }
 
-async function addKudo(name, message, category, emoji) {
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        Name: name,
-        Message: message,
-        Category: category,
-        Emoji: emoji,
-        Date: new Date().toISOString()
-      })
-    });
-    return response.ok;
-  } catch(e) {
-    console.log('Error adding kudo:', e);
-    return false;
-  }
+function save(all) {
+  localStorage.setItem(KEY, JSON.stringify(all));
 }
 
-async function switchTab(tab) {
-  if ((tab === 'wall' || tab === 'present') && !passwordProtected) {
-    pendingAction = tab;
+function switchTab(e, tab) {
+  if ((tab === 'wall' || tab === 'present') && !auth) {
     document.getElementById('passwordModal').classList.add('show');
     document.getElementById('passwordInput').focus();
+    document.getElementById('passwordInput').dataset.action = tab;
     return;
   }
   
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  e.target.classList.add('active');
   
-  if (tab === 'wall') await renderWall();
-  if (tab === 'present') await renderPresentation();
+  if (tab === 'wall') renderWall();
+  if (tab === 'present') renderPresent();
 }
 
-async function renderWall() {
-  const kudos = await getKudos();
+function renderWall() {
+  const all = getAll();
   const container = document.getElementById('wallContainer');
   
-  if (!kudos || kudos.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div>No kudos yet. Be the first!</div>';
+  if (all.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div>No kudos yet!</div>';
     return;
   }
   
-  container.innerHTML = kudos.map(k => `
+  container.innerHTML = all.map(k => `
     <div class="card">
-      <div class="card-badge">${CATEGORIES[k.Category] || k.Category}</div>
-      <div style="display:flex;gap:10px;">
-        <div class="card-emoji">${k.Emoji || '😎'}</div>
-        <div style="flex:1;">
-          <div class="card-name">${k.Name}</div>
-          <div class="card-category">${CATEGORIES[k.Category]}</div>
-        </div>
-      </div>
-      <div class="card-message">${k.Message}</div>
-      <div class="card-date">${new Date(k.Date).toLocaleDateString()}</div>
+      <div style="font-size:40px;margin-bottom:10px;">${k.emoji}</div>
+      <div class="card-name">${k.name}</div>
+      <div class="card-category">${CATS[k.cat]}</div>
+      <div class="card-message">${k.msg}</div>
+      <div style="font-size:11px;color:#999;margin-top:10px;">${new Date(k.date).toLocaleDateString()}</div>
     </div>
   `).join('');
 }
 
-async function renderPresentation() {
-  const kudos = await getKudos();
-  const container = document.getElementById('presentContainer');
+function renderPresent() {
+  const all = getAll();
+  const wall = document.getElementById('presentWall');
   
-  if (!kudos || kudos.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div><div style="color:rgba(255,255,255,0.6)">No kudos yet!</div></div>';
+  if (all.length === 0) {
+    wall.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div></div>';
     document.getElementById('presentMode').classList.add('show');
     return;
   }
   
-  container.innerHTML = kudos.map(k => `
-    <div class="card" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)">
-      <div class="card-badge">${CATEGORIES[k.Category]}</div>
-      <div style="display:flex;gap:10px;">
-        <div class="card-emoji">${k.Emoji || '😎'}</div>
-        <div style="flex:1;">
-          <div class="card-name" style="color:white">${k.Name}</div>
-          <div class="card-category" style="color:rgba(255,255,255,0.8)">${CATEGORIES[k.Category]}</div>
-        </div>
-      </div>
-      <div class="card-message" style="color:rgba(255,255,255,0.95)">${k.Message}</div>
-      <div class="card-date" style="color:rgba(255,255,255,0.6)">${new Date(k.Date).toLocaleDateString()}</div>
+  wall.innerHTML = all.map(k => `
+    <div class="card">
+      <div style="font-size:40px;margin-bottom:10px;">${k.emoji}</div>
+      <div class="card-name">${k.name}</div>
+      <div class="card-category">${CATS[k.cat]}</div>
+      <div class="card-message">${k.msg}</div>
     </div>
   `).join('');
   
@@ -285,29 +253,29 @@ async function renderPresentation() {
 
 function exitPresentation() {
   document.getElementById('presentMode').classList.remove('show');
-  passwordProtected = false;
+  auth = false;
 }
 
 function checkPassword() {
   const pwd = document.getElementById('passwordInput').value;
-  document.getElementById('passwordError').textContent = '';
   
   if (pwd === PASSWORD) {
-    passwordProtected = true;
+    auth = true;
     document.getElementById('passwordModal').classList.remove('show');
+    const action = document.getElementById('passwordInput').dataset.action;
     document.getElementById('passwordInput').value = '';
     
-    if (pendingAction === 'wall') {
+    if (action === 'wall') {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById('wall').classList.add('active');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-btn')[1].classList.add('active');
       renderWall();
-    } else if (pendingAction === 'present') {
-      renderPresentation();
+    } else if (action === 'present') {
+      renderPresent();
     }
   } else {
-    document.getElementById('passwordError').textContent = 'Incorrect password';
+    document.getElementById('passwordError').textContent = 'Wrong password';
     document.getElementById('passwordInput').value = '';
   }
 }
@@ -316,68 +284,58 @@ function closePasswordModal() {
   document.getElementById('passwordModal').classList.remove('show');
   document.getElementById('passwordInput').value = '';
   document.getElementById('passwordError').textContent = '';
-  passwordProtected = false;
 }
 
-async function submitKudos() {
+function submitKudos() {
   const name = document.getElementById('nameInput').value.trim();
-  const message = document.getElementById('messageInput').value.trim();
+  const msg = document.getElementById('messageInput').value.trim();
   
   document.getElementById('nameError').textContent = '';
   document.getElementById('messageError').textContent = '';
   
   if (!name) { document.getElementById('nameError').textContent = 'Required'; return; }
-  if (!message) { document.getElementById('messageError').textContent = 'Required'; return; }
+  if (!msg) { document.getElementById('messageError').textContent = 'Required'; return; }
   
-  const success = await addKudo(name, message, selectedCategory, selectedEmoji);
+  const all = getAll();
+  all.unshift({ name, msg, cat: category, emoji, date: new Date().toISOString() });
+  save(all);
   
-  if (success) {
-    clearForm();
-    
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('wall').classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-btn')[1].classList.add('active');
-    
-    await renderWall();
-    
-    document.getElementById('toast').classList.add('show');
-    setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
-  } else {
-    document.getElementById('messageError').textContent = 'Error posting. Try again.';
-  }
+  clearForm();
+  
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('wall').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  
+  renderWall();
+  
+  document.getElementById('toast').classList.add('show');
+  setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
 }
 
 function clearForm() {
   document.getElementById('nameInput').value = '';
   document.getElementById('messageInput').value = '';
-  selectedCategory = 'hero';
-  selectedEmoji = '😎';
-  document.querySelectorAll('.category-btn')[0].classList.add('selected');
-  document.querySelectorAll('.category-btn').slice(1).forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('.emoji-btn')[0].classList.add('selected');
-  document.querySelectorAll('.emoji-btn').slice(1).forEach(b => b.classList.remove('selected'));
+  category = 'hero';
+  emoji = '😎';
 }
 
-// Category buttons
 document.querySelectorAll('.category-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
     e.target.classList.add('selected');
-    selectedCategory = e.target.dataset.cat;
+    category = e.target.dataset.cat;
   });
 });
 
-// Emoji buttons
 document.querySelectorAll('.emoji-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
     e.target.classList.add('selected');
-    selectedEmoji = e.target.dataset.emoji;
+    emoji = e.target.dataset.emoji;
   });
 });
 
-// Password input enter key
 document.getElementById('passwordInput').addEventListener('keypress', e => {
   if (e.key === 'Enter') checkPassword();
 });
