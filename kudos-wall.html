@@ -55,6 +55,9 @@ body{font-family:system-ui,sans-serif;background:#f5f5f5}
 .modal-buttons .btn-primary{background:#8B5CF6;color:white}
 .toast{position:fixed;bottom:20px;right:20px;background:#8B5CF6;color:white;padding:15px 20px;border-radius:8px;font-weight:600;display:none;z-index:2000}
 .toast.show{display:block}
+.loading{text-align:center;padding:20px;color:#666}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #8B5CF6;border-top-color:#FF8B3B;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .present-mode{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#0F1B3E 0%,#1a2a5a 50%,#8B5CF6 100%);z-index:2000;display:none;flex-direction:column;padding:30px;overflow-y:auto}
 .present-mode.show{display:flex}
 .present-title{font-size:56px;color:white;text-align:center;margin-bottom:10px;font-weight:700}
@@ -127,7 +130,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f5}
     <div class="section" id="wall">
       <h2>🏆 Customer Heroes & Team Legends</h2>
       <div class="wall-grid" id="wallContainer">
-        <div class="empty"><div class="empty-icon">🌟</div>No kudos yet. Be the first!</div>
+        <div class="loading"><div class="spinner"></div> Loading kudos...</div>
       </div>
     </div>
   </div>
@@ -156,12 +159,14 @@ body{font-family:system-ui,sans-serif;background:#f5f5f5}
   <button class="present-close" onclick="exitPresentation()">Exit</button>
   <div class="present-title">🏆 Customer Heroes & Team Legends</div>
   <div class="present-tagline">Celebrating our squad</div>
-  <div class="wall-grid" id="presentContainer"></div>
+  <div class="wall-grid" id="presentContainer" style="margin-top:30px">
+    <div class="loading"><div class="spinner"></div> Loading...</div>
+  </div>
 </div>
 
 <script>
 const PASSWORD = 'QBRKudos';
-const STORAGE_KEY = 'kudos-data-2026';
+const API_URL = 'https://sheet.best/api/sheets/f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0';
 
 let selectedCategory = 'hero';
 let selectedEmoji = '😎';
@@ -177,22 +182,38 @@ const CATEGORIES = {
   easier: '✨ Made Life Easier'
 };
 
-function getKudos() { 
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
+async function getKudos() {
+  try {
+    const response = await fetch(API_URL);
+    const data = await response.json();
+    return data || [];
+  } catch(e) {
+    console.log('Error fetching kudos:', e);
+    return [];
+  }
 }
 
-function save(kudos) { 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(kudos));
+async function addKudo(name, message, category, emoji) {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        Name: name,
+        Message: message,
+        Category: category,
+        Emoji: emoji,
+        Date: new Date().toISOString()
+      })
+    });
+    return response.ok;
+  } catch(e) {
+    console.log('Error adding kudo:', e);
+    return false;
+  }
 }
 
-function addKudo(n, m, c, e) { 
-  const k = getKudos(); 
-  k.unshift({n, m, c, e, t: new Date().toISOString()}); 
-  save(k);
-}
-
-function switchTab(tab) {
+async function switchTab(tab) {
   if ((tab === 'wall' || tab === 'present') && !passwordProtected) {
     pendingAction = tab;
     document.getElementById('passwordModal').classList.add('show');
@@ -205,12 +226,12 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   
-  if (tab === 'wall') renderWall();
-  if (tab === 'present') renderPresentation();
+  if (tab === 'wall') await renderWall();
+  if (tab === 'present') await renderPresentation();
 }
 
-function renderWall() {
-  const kudos = getKudos();
+async function renderWall() {
+  const kudos = await getKudos();
   const container = document.getElementById('wallContainer');
   
   if (!kudos || kudos.length === 0) {
@@ -220,41 +241,42 @@ function renderWall() {
   
   container.innerHTML = kudos.map(k => `
     <div class="card">
-      <div class="card-badge">${CATEGORIES[k.c]}</div>
+      <div class="card-badge">${CATEGORIES[k.Category] || k.Category}</div>
       <div style="display:flex;gap:10px;">
-        <div class="card-emoji">${k.e}</div>
+        <div class="card-emoji">${k.Emoji || '😎'}</div>
         <div style="flex:1;">
-          <div class="card-name">${k.n}</div>
-          <div class="card-category">${CATEGORIES[k.c]}</div>
+          <div class="card-name">${k.Name}</div>
+          <div class="card-category">${CATEGORIES[k.Category]}</div>
         </div>
       </div>
-      <div class="card-message">${k.m}</div>
-      <div class="card-date">${new Date(k.t).toLocaleDateString()}</div>
+      <div class="card-message">${k.Message}</div>
+      <div class="card-date">${new Date(k.Date).toLocaleDateString()}</div>
     </div>
   `).join('');
 }
 
-function renderPresentation() {
-  const kudos = getKudos();
+async function renderPresentation() {
+  const kudos = await getKudos();
   const container = document.getElementById('presentContainer');
   
   if (!kudos || kudos.length === 0) {
     container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div><div style="color:rgba(255,255,255,0.6)">No kudos yet!</div></div>';
+    document.getElementById('presentMode').classList.add('show');
     return;
   }
   
   container.innerHTML = kudos.map(k => `
     <div class="card" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)">
-      <div class="card-badge">${CATEGORIES[k.c]}</div>
+      <div class="card-badge">${CATEGORIES[k.Category]}</div>
       <div style="display:flex;gap:10px;">
-        <div class="card-emoji">${k.e}</div>
+        <div class="card-emoji">${k.Emoji || '😎'}</div>
         <div style="flex:1;">
-          <div class="card-name" style="color:white">${k.n}</div>
-          <div class="card-category" style="color:rgba(255,255,255,0.8)">${CATEGORIES[k.c]}</div>
+          <div class="card-name" style="color:white">${k.Name}</div>
+          <div class="card-category" style="color:rgba(255,255,255,0.8)">${CATEGORIES[k.Category]}</div>
         </div>
       </div>
-      <div class="card-message" style="color:rgba(255,255,255,0.95)">${k.m}</div>
-      <div class="card-date" style="color:rgba(255,255,255,0.6)">${new Date(k.t).toLocaleDateString()}</div>
+      <div class="card-message" style="color:rgba(255,255,255,0.95)">${k.Message}</div>
+      <div class="card-date" style="color:rgba(255,255,255,0.6)">${new Date(k.Date).toLocaleDateString()}</div>
     </div>
   `).join('');
   
@@ -297,7 +319,7 @@ function closePasswordModal() {
   passwordProtected = false;
 }
 
-function submitKudos() {
+async function submitKudos() {
   const name = document.getElementById('nameInput').value.trim();
   const message = document.getElementById('messageInput').value.trim();
   
@@ -307,14 +329,23 @@ function submitKudos() {
   if (!name) { document.getElementById('nameError').textContent = 'Required'; return; }
   if (!message) { document.getElementById('messageError').textContent = 'Required'; return; }
   
-  addKudo(name, message, selectedCategory, selectedEmoji);
+  const success = await addKudo(name, message, selectedCategory, selectedEmoji);
   
-  clearForm();
-  switchTab('wall');
-  renderWall();
-  
-  document.getElementById('toast').classList.add('show');
-  setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
+  if (success) {
+    clearForm();
+    
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('wall').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    
+    await renderWall();
+    
+    document.getElementById('toast').classList.add('show');
+    setTimeout(() => document.getElementById('toast').classList.remove('show'), 2500);
+  } else {
+    document.getElementById('messageError').textContent = 'Error posting. Try again.';
+  }
 }
 
 function clearForm() {
@@ -328,7 +359,7 @@ function clearForm() {
   document.querySelectorAll('.emoji-btn').slice(1).forEach(b => b.classList.remove('selected'));
 }
 
-// Category button handlers
+// Category buttons
 document.querySelectorAll('.category-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
@@ -337,7 +368,7 @@ document.querySelectorAll('.category-btn').forEach(btn => {
   });
 });
 
-// Emoji button handlers
+// Emoji buttons
 document.querySelectorAll('.emoji-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
