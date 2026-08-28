@@ -177,9 +177,20 @@ const CATEGORIES = {
   easier: '✨ Made Life Easier'
 };
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(getKudos())); }
-function getKudos() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-function addKudo(n, m, c, e) { const k = getKudos(); k.unshift({n, m, c, e, t: new Date().toISOString()}); localStorage.setItem(STORAGE_KEY, JSON.stringify(k)); }
+function getKudos() { 
+  const data = localStorage.getItem(STORAGE_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+function save(kudos) { 
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(kudos));
+}
+
+function addKudo(n, m, c, e) { 
+  const k = getKudos(); 
+  k.unshift({n, m, c, e, t: new Date().toISOString()}); 
+  save(k);
+}
 
 function switchTab(tab) {
   if ((tab === 'wall' || tab === 'present') && !passwordProtected) {
@@ -202,7 +213,7 @@ function renderWall() {
   const kudos = getKudos();
   const container = document.getElementById('wallContainer');
   
-  if (kudos.length === 0) {
+  if (!kudos || kudos.length === 0) {
     container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div>No kudos yet. Be the first!</div>';
     return;
   }
@@ -227,7 +238,7 @@ function renderPresentation() {
   const kudos = getKudos();
   const container = document.getElementById('presentContainer');
   
-  if (kudos.length === 0) {
+  if (!kudos || kudos.length === 0) {
     container.innerHTML = '<div class="empty"><div class="empty-icon">🌟</div><div style="color:rgba(255,255,255,0.6)">No kudos yet!</div></div>';
     return;
   }
