@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY KudosWall.Api/KudosWall.Api.csproj KudosWall.Api/
+RUN dotnet restore KudosWall.Api/KudosWall.Api.csproj
+COPY KudosWall.Api/ KudosWall.Api/
+RUN dotnet publish KudosWall.Api/KudosWall.Api.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /app .
+COPY kudos-wall.html ./wwwroot/index.html
+ENTRYPOINT ["/bin/sh", "-c", "ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} exec dotnet KudosWall.Api.dll"]
