@@ -3,10 +3,11 @@ WORKDIR /src
 COPY KudosWall.Api/KudosWall.Api.csproj KudosWall.Api/
 RUN dotnet restore KudosWall.Api/KudosWall.Api.csproj
 COPY KudosWall.Api/ KudosWall.Api/
-RUN dotnet publish KudosWall.Api/KudosWall.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish KudosWall.Api/KudosWall.Api.csproj -c Release -o /app --no-restore /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
 WORKDIR /app
 COPY --from=build /app .
 COPY kudos-wall.html ./wwwroot/index.html
-ENTRYPOINT ["/bin/sh", "-c", "ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} exec dotnet KudosWall.Api.dll"]
+ENV PORT=80 DOTNET_EnableDiagnostics=0
+ENTRYPOINT ["dotnet", "KudosWall.Api.dll"]

@@ -5,6 +5,10 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var vercelPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(vercelPort))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{vercelPort}");
+
 var connectionString = builder.Configuration.GetConnectionString("KudosWall")
     ?? DatabaseConnection.FromPostgresEnvironment(builder.Configuration)
     ?? throw new InvalidOperationException("ConnectionStrings:KudosWall is required.");
