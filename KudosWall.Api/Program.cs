@@ -9,8 +9,8 @@ var vercelPort = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(vercelPort))
     builder.WebHost.UseUrls($"http://0.0.0.0:{vercelPort}");
 
-var connectionString = builder.Configuration.GetConnectionString("KudosWall")
-    ?? DatabaseConnection.FromPostgresEnvironment(builder.Configuration)
+var connectionString = DatabaseConnection.FromPostgresEnvironment(builder.Configuration)
+    ?? builder.Configuration.GetConnectionString("KudosWall")
     ?? throw new InvalidOperationException("ConnectionStrings:KudosWall is required.");
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
