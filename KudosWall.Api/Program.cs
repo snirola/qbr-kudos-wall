@@ -61,7 +61,7 @@ app.MapPost("/api/kudos", async (CreateKudosRequest request, NpgsqlDataSource da
         VALUES ($1, $2, $3, $4)
         RETURNING id, submitted_at;
         """);
-    command.Parameters.AddWithValue(request.RecipientName.Trim());
+    command.Parameters.AddWithValue($"{request.FirstName.Trim()} {request.LastName.Trim()}");
     command.Parameters.AddWithValue(request.Message.Trim());
     command.Parameters.AddWithValue(request.Category);
     command.Parameters.AddWithValue(request.Emoji);
@@ -159,7 +159,7 @@ app.MapDelete("/api/admin/kudos/{id:guid}", async (Guid id, HttpRequest request,
 
 app.Run();
 
-record CreateKudosRequest(string RecipientName, string Message, string Category, string Emoji);
+record CreateKudosRequest(string FirstName, string LastName, string Message, string Category, string Emoji);
 record AdminLoginRequest(string Email, string Password);
 record UpdateStatusRequest(string Status);
 record AdminUser(Guid Id, string Email, string PasswordHash);
@@ -270,8 +270,10 @@ static class Validation
     public static Dictionary<string, string[]> Validate(CreateKudosRequest request)
     {
         var errors = new Dictionary<string, string[]>();
-        if (string.IsNullOrWhiteSpace(request.RecipientName) || request.RecipientName.Trim().Length > 100)
-            errors["recipientName"] = ["Recipient name is required and must not exceed 100 characters."];
+        if (string.IsNullOrWhiteSpace(request.FirstName) || request.FirstName.Trim().Length > 100)
+            errors["firstName"] = ["First name is required and must not exceed 100 characters."];
+        if (string.IsNullOrWhiteSpace(request.LastName) || request.LastName.Trim().Length > 100)
+            errors["lastName"] = ["Last name is required and must not exceed 100 characters."];
         if (string.IsNullOrWhiteSpace(request.Message) || request.Message.Trim().Length > 500)
             errors["message"] = ["Message is required and must not exceed 500 characters."];
         if (!Categories.Contains(request.Category)) errors["category"] = ["Invalid category."];
@@ -328,6 +330,7 @@ static class Database
                 emoji VARCHAR(10) NOT NULL, submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','archived'))
             );
+            ALTER TABLE kudos ALTER COLUMN recipient_name TYPE VARCHAR(201);
             CREATE INDEX IF NOT EXISTS ix_kudos_submitted_at ON kudos(submitted_at DESC);
             CREATE INDEX IF NOT EXISTS ix_kudos_status ON kudos(status);
             DELETE FROM admin_sessions WHERE expires_at <= NOW();

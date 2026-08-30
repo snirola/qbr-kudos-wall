@@ -131,6 +131,7 @@ body {
   background: #fafbfc;
 }
 .form-group textarea { min-height: 90px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .field-hint {
   display: flex; justify-content: space-between; gap: 12px; margin-top: 7px;
   color: #666; font-size: 12px; font-weight: 500;
@@ -230,6 +231,7 @@ body {
 .wall { 
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+  align-items: start;
   gap: 28px; 
   max-height: 72vh; 
   overflow-y: auto; 
@@ -317,6 +319,9 @@ body {
   line-height: 1.8; 
   margin-bottom: 16px;
   font-weight: 400;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 .card-date { 
   font-size: 11px; 
@@ -467,6 +472,7 @@ body {
   .wall-actions .btn { flex: 1 1 150px; }
   .group-card > summary { grid-template-columns: auto 1fr; }
   .group-toggle { grid-column: 2; }
+  .form-row { grid-template-columns: 1fr; gap: 0; }
 }
 </style>
 </head>
@@ -489,10 +495,19 @@ body {
     <h2 style="color:#0F1B3E;margin-bottom:24px;font-size:26px;font-weight:700;">🏆 Shout Out a Legend</h2>
     <p style="color:#666;margin-bottom:28px;font-size:15px;line-height:1.6;">Who made an impact this quarter? Share your appreciation here.</p>
     
-    <div class="form-group">
-      <label>Teammate Name:</label>
-      <input type="text" id="nameInput" placeholder="Enter their name">
-      <div class="error" id="nameError"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstNameInput">First Name:</label>
+        <input type="text" id="firstNameInput" maxlength="100" autocomplete="given-name" required placeholder="Enter their first name">
+        <div class="field-hint"><span>Maximum 100 characters</span></div>
+        <div class="error" id="firstNameError"></div>
+      </div>
+      <div class="form-group">
+        <label for="lastNameInput">Last Name:</label>
+        <input type="text" id="lastNameInput" maxlength="100" autocomplete="family-name" required placeholder="Enter their last name">
+        <div class="field-hint"><span>Maximum 100 characters</span></div>
+        <div class="error" id="lastNameError"></div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -765,17 +780,20 @@ async function exportKudos() {
 }
 
 async function submitKudos() {
-  const name = document.getElementById('nameInput').value.trim();
+  const firstName = document.getElementById('firstNameInput').value.trim();
+  const lastName = document.getElementById('lastNameInput').value.trim();
   const message = document.getElementById('messageInput').value.trim();
-  document.getElementById('nameError').textContent = '';
+  document.getElementById('firstNameError').textContent = '';
+  document.getElementById('lastNameError').textContent = '';
   document.getElementById('messageError').textContent = '';
-  if (!name) { document.getElementById('nameError').textContent = 'Required'; return; }
+  if (!firstName) { document.getElementById('firstNameError').textContent = 'Required'; return; }
+  if (!lastName) { document.getElementById('lastNameError').textContent = 'Required'; return; }
   if (!message) { document.getElementById('messageError').textContent = 'Required'; return; }
 
   try {
     const response = await fetch(`${API_BASE}/kudos`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipientName: name, message, category, emoji })
+      body: JSON.stringify({ firstName, lastName, message, category, emoji })
     });
     if (!response.ok) throw new Error();
     clearForm();
@@ -786,7 +804,8 @@ async function submitKudos() {
 }
 
 function clearForm() {
-  document.getElementById('nameInput').value = '';
+  document.getElementById('firstNameInput').value = '';
+  document.getElementById('lastNameInput').value = '';
   document.getElementById('messageInput').value = '';
   updateMessageCount();
   category = 'hero'; emoji = '😎';
