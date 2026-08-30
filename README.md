@@ -76,5 +76,6 @@ Vercel detects the root `Dockerfile.vercel` and deploys the static page and ASP.
 - `POST /api/admin/logout`
 - `GET /api/admin/kudos`
 - `GET /api/admin/kudos/export`
+- `POST /api/admin/kudos/import`
 - `PATCH /api/admin/kudos/{id}/status`
 - `DELETE /api/admin/kudos/{id}`

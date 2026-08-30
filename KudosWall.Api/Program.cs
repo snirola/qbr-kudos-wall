@@ -136,6 +136,49 @@ app.MapGet("/api/admin/kudos/export", async (HttpRequest request, NpgsqlDataSour
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
 });
 
+app.MapPost("/api/admin/kudos/import", async (
+    ImportKudosRequest request, HttpRequest httpRequest, NpgsqlDataSource dataSource) =>
+{
+    if (!await SessionTokens.IsAdminAsync(httpRequest, dataSource)) return Results.Unauthorized();
+    if (request.Kudos is null || request.Kudos.Count == 0 || request.Kudos.Count > 1000)
+        return Results.ValidationProblem(new Dictionary<string, string[]> { ["kudos"] = ["Provide between 1 and 1,000 kudos rows."] });
+
+    var errors = new Dictionary<string, string[]>();
+    for (var index = 0; index < request.Kudos.Count; index++)
+    {
+        var item = request.Kudos[index];
+        if (string.IsNullOrWhiteSpace(item.RecipientName) || item.RecipientName.Trim().Length > 201)
+            errors[$"kudos[{index}].recipientName"] = ["Name is required and must not exceed 201 characters."];
+        if (string.IsNullOrWhiteSpace(item.Message) || item.Message.Trim().Length > 500)
+            errors[$"kudos[{index}].message"] = ["Message is required and must not exceed 500 characters."];
+        if (!Validation.IsValidCategory(item.Category))
+            errors[$"kudos[{index}].category"] = ["Invalid category."];
+        if (!Validation.IsValidEmoji(item.Emoji))
+            errors[$"kudos[{index}].emoji"] = ["Invalid emoji."];
+    }
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+
+    await using var connection = await dataSource.OpenConnectionAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+    await using (var delete = new NpgsqlCommand("DELETE FROM kudos;", connection, transaction))
+        await delete.ExecuteNonQueryAsync();
+    foreach (var item in request.Kudos)
+    {
+        await using var insert = new NpgsqlCommand("""
+            INSERT INTO kudos (recipient_name, message, category, emoji, submitted_at)
+            VALUES ($1, $2, $3, $4, $5);
+            """, connection, transaction);
+        insert.Parameters.AddWithValue(item.RecipientName.Trim());
+        insert.Parameters.AddWithValue(item.Message.Trim());
+        insert.Parameters.AddWithValue(item.Category);
+        insert.Parameters.AddWithValue(item.Emoji);
+        insert.Parameters.AddWithValue(item.SubmittedAt.UtcDateTime);
+        await insert.ExecuteNonQueryAsync();
+    }
+    await transaction.CommitAsync();
+    return Results.Ok(new { imported = request.Kudos.Count });
+});
+
 app.MapPatch("/api/admin/kudos/{id:guid}/status", async (
     Guid id, UpdateStatusRequest request, HttpRequest httpRequest, NpgsqlDataSource dataSource) =>
 {
@@ -162,6 +205,8 @@ app.Run();
 record CreateKudosRequest(string FirstName, string LastName, string Message, string Category, string Emoji);
 record AdminLoginRequest(string Email, string Password);
 record UpdateStatusRequest(string Status);
+record ImportKudosRequest(List<ImportKudosItem> Kudos);
+record ImportKudosItem(string RecipientName, string Message, string Category, string Emoji, DateTimeOffset SubmittedAt);
 record AdminUser(Guid Id, string Email, string PasswordHash);
 record KudosResponse(Guid Id, string RecipientName, string Message, string Category, string Emoji, DateTime SubmittedAt, string Status);
 
@@ -233,11 +278,12 @@ static class ExcelExport
     {
         var xml = new StringBuilder("""
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="3" width="64" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/></cols><sheetData>
+            <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="3" width="64" customWidth="1"/><col min="4" max="4" width="24" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/></cols><sheetData>
             """);
         xml.Append("<row r=\"1\">");
         AppendTextCell(xml, "A1", "SN", 1); AppendTextCell(xml, "B1", "Name", 1);
         AppendTextCell(xml, "C1", "Feedback comments", 1); AppendTextCell(xml, "D1", "Category", 1);
+        AppendTextCell(xml, "E1", "Emoji", 1);
         xml.Append("</row>");
         for (var index = 0; index < kudos.Count; index++)
         {
@@ -245,9 +291,10 @@ static class ExcelExport
             xml.Append($"<row r=\"{row}\"><c r=\"A{row}\" t=\"n\"><v>{index + 1}</v></c>");
             AppendTextCell(xml, $"B{row}", item.RecipientName); AppendTextCell(xml, $"C{row}", item.Message);
             AppendTextCell(xml, $"D{row}", CategoryLabels.GetValueOrDefault(item.Category, item.Category));
+            AppendTextCell(xml, $"E{row}", item.Emoji);
             xml.Append("</row>");
         }
-        xml.Append($"</sheetData><autoFilter ref=\"A1:D{Math.Max(1, kudos.Count + 1)}\"/></worksheet>");
+        xml.Append($"</sheetData><autoFilter ref=\"A1:E{Math.Max(1, kudos.Count + 1)}\"/></worksheet>");
         return xml.ToString();
     }
 
@@ -266,7 +313,9 @@ static class ExcelExport
 static class Validation
 {
     private static readonly HashSet<string> Categories = ["hero", "save", "team", "brain", "unsung", "easier"];
-    private static readonly HashSet<string> Emojis = ["😎", "🚀", "🦸", "🔥", "⭐", "💪"];
+    private static readonly HashSet<string> Emojis = ["😎", "🚀", "🦸", "🔥", "⭐", "💪", "😊"];
+    public static bool IsValidCategory(string category) => Categories.Contains(category);
+    public static bool IsValidEmoji(string emoji) => Emojis.Contains(emoji);
     public static Dictionary<string, string[]> Validate(CreateKudosRequest request)
     {
         var errors = new Dictionary<string, string[]>();
@@ -276,8 +325,8 @@ static class Validation
             errors["lastName"] = ["Last name is required and must not exceed 100 characters."];
         if (string.IsNullOrWhiteSpace(request.Message) || request.Message.Trim().Length > 500)
             errors["message"] = ["Message is required and must not exceed 500 characters."];
-        if (!Categories.Contains(request.Category)) errors["category"] = ["Invalid category."];
-        if (!Emojis.Contains(request.Emoji)) errors["emoji"] = ["Invalid emoji."];
+        if (!IsValidCategory(request.Category)) errors["category"] = ["Invalid category."];
+        if (!IsValidEmoji(request.Emoji)) errors["emoji"] = ["Invalid emoji."];
         return errors;
     }
 }
@@ -341,14 +390,39 @@ static class Database
         var password = config["BootstrapAdmin:Password"];
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return;
         if (password.Length < 8) throw new InvalidOperationException("Bootstrap admin password must be at least 8 characters.");
-        var admin = new AdminUser(Guid.Empty, email, string.Empty);
-        await using var bootstrap = dataSource.CreateCommand("""
-            INSERT INTO admin_users (email, password_hash) VALUES ($1, $2)
-            ON CONFLICT (email) DO NOTHING;
-            """);
-        bootstrap.Parameters.AddWithValue(email);
-        bootstrap.Parameters.AddWithValue(hasher.HashPassword(admin, password));
-        await bootstrap.ExecuteNonQueryAsync();
+        AdminUser? existingAdmin = null;
+        await using (var findAdmin = dataSource.CreateCommand("SELECT id, email, password_hash FROM admin_users WHERE email = $1;"))
+        {
+            findAdmin.Parameters.AddWithValue(email);
+            await using var reader = await findAdmin.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+                existingAdmin = new AdminUser(reader.GetGuid(0), reader.GetString(1), reader.GetString(2));
+        }
+
+        if (existingAdmin is null)
+        {
+            var admin = new AdminUser(Guid.Empty, email, string.Empty);
+            await using var createAdmin = dataSource.CreateCommand("INSERT INTO admin_users (email, password_hash) VALUES ($1, $2);");
+            createAdmin.Parameters.AddWithValue(email);
+            createAdmin.Parameters.AddWithValue(hasher.HashPassword(admin, password));
+            await createAdmin.ExecuteNonQueryAsync();
+        }
+        else if (hasher.VerifyHashedPassword(existingAdmin, existingAdmin.PasswordHash, password) == PasswordVerificationResult.Failed)
+        {
+            await using var updateAdmin = dataSource.CreateCommand("UPDATE admin_users SET password_hash = $1, is_active = TRUE WHERE id = $2;");
+            updateAdmin.Parameters.AddWithValue(hasher.HashPassword(existingAdmin, password));
+            updateAdmin.Parameters.AddWithValue(existingAdmin.Id);
+            await updateAdmin.ExecuteNonQueryAsync();
+            await using var clearSessions = dataSource.CreateCommand("DELETE FROM admin_sessions WHERE admin_user_id = $1;");
+            clearSessions.Parameters.AddWithValue(existingAdmin.Id);
+            await clearSessions.ExecuteNonQueryAsync();
+        }
+
+        await using var deactivateOthers = dataSource.CreateCommand("UPDATE admin_users SET is_active = (email = $1);");
+        deactivateOthers.Parameters.AddWithValue(email);
+        await deactivateOthers.ExecuteNonQueryAsync();
+        await using var removeInactiveSessions = dataSource.CreateCommand("DELETE FROM admin_sessions WHERE admin_user_id IN (SELECT id FROM admin_users WHERE is_active = FALSE);");
+        await removeInactiveSessions.ExecuteNonQueryAsync();
     }
 }
 
