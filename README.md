@@ -24,7 +24,7 @@ The existing `kudos-wall.html` frontend now uses an ASP.NET Core API and Postgre
 4. Open `C:\Projects\qbr-kudos-wall\kudos-wall.html` in a browser.
 5. Submit kudos publicly or select **View Wall** and use the bootstrap administrator credentials from `.env`.
 
-The public page is configured for `https://www.kudos-evotix.com`, with its API at `https://www.kudos-evotix.com/api`. The page reads the API address from its `api-base-url` meta element.
+The current hosted version is available at `https://qbr-kudos-wall-git-refactoredkudos-shipra3.vercel.app/`. The page uses a relative API address from its `api-base-url` meta element, so the frontend and API work together on the same deployment.
 
 The bootstrap account is created only when its email does not already exist. Changing the password in `.env` later does not overwrite an existing administrator password.
 
@@ -75,5 +75,6 @@ Vercel detects the root `Dockerfile.vercel` and deploys the static page and ASP.
 - `POST /api/admin/login`
 - `POST /api/admin/logout`
 - `GET /api/admin/kudos`
+- `GET /api/admin/kudos/export`
 - `PATCH /api/admin/kudos/{id}/status`
 - `DELETE /api/admin/kudos/{id}`

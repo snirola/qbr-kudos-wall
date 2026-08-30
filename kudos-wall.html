@@ -233,6 +233,8 @@ body {
 .wall-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
 .wall-header h2 { margin-bottom: 0 !important; }
 .wall-header .btn { flex: 0 0 auto; }
+.wall-actions { display: flex; align-items: center; gap: 10px; }
+.btn:disabled { cursor: wait; opacity: 0.65; transform: none; box-shadow: none; }
 .wall::-webkit-scrollbar { width: 10px; }
 .wall::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
 .wall::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #8B5CF6 0%, #3B82F6 100%); border-radius: 10px; }
@@ -317,6 +319,23 @@ body {
   font-weight: 500;
   letter-spacing: 0.2px;
 }
+.group-card { padding: 0; }
+.group-card > summary {
+  list-style: none; cursor: pointer; padding: 28px; display: grid;
+  grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;
+}
+.group-card > summary::-webkit-details-marker { display: none; }
+.group-card > summary:focus-visible { outline: 3px solid #3B82F6; outline-offset: -5px; border-radius: 12px; }
+.group-card .card-emoji { margin-bottom: 0; }
+.group-summary-copy .card-name { margin-bottom: 5px; }
+.kudos-count { color: #6D28D9; font-size: 13px; font-weight: 700; }
+.group-toggle { color: #3B82F6; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.group-toggle::after { content: 'Show all'; }
+.group-card[open] .group-toggle::after { content: 'Hide'; }
+.group-items { border-top: 1px solid #e8d4f8; padding: 0 28px 12px; }
+.group-item { padding: 22px 0; border-bottom: 1px solid #eee8f7; }
+.group-item:last-child { border-bottom: 0; }
+.group-item .card-message { margin-bottom: 10px; }
 .empty { 
   text-align: center; 
   padding: 80px 20px; 
@@ -435,6 +454,15 @@ body {
   border: 2px solid #FF8B3B;
 }
 .toast.show { display: block; }
+@media (max-width: 700px) {
+  .header h1 { font-size: 32px; }
+  .content { padding: 20px; margin-inline: 12px; }
+  .wall-header { align-items: stretch; flex-direction: column; }
+  .wall-actions { flex-wrap: wrap; }
+  .wall-actions .btn { flex: 1 1 150px; }
+  .group-card > summary { grid-template-columns: auto 1fr; }
+  .group-toggle { grid-column: 2; }
+}
 </style>
 </head>
 <body>
@@ -501,7 +529,10 @@ body {
   <div class="section" id="wall">
     <div class="wall-header">
       <h2 style="color:#0F1B3E;margin-bottom:28px;font-size:26px;font-weight:700;">🏆 Customer Heroes & Team Legends</h2>
-      <button class="btn" onclick="logoutAdmin()">Sign out</button>
+      <div class="wall-actions">
+        <button class="btn btn-primary" id="exportButton" onclick="exportKudos()">📊 Export to Excel</button>
+        <button class="btn" onclick="logoutAdmin()">Sign out</button>
+      </div>
     </div>
     <div class="wall" id="wallContainer">
       <div class="empty"><div class="empty-icon">🌟</div>Loading kudos...</div>
@@ -617,7 +648,8 @@ async function renderWall() {
     if (!response.ok) throw new Error();
     const all = await response.json();
     if (all.length === 0) { container.replaceChildren(createEmptyState('No kudos yet.')); return; }
-    container.replaceChildren(...all.map((k, i) => createKudosCard(k, i)));
+    const groups = groupKudosByRecipient(all);
+    container.replaceChildren(...groups.map((group, i) => createRecipientGroup(group, i)));
   } catch {
     container.replaceChildren(createEmptyState('Unable to load kudos.'));
   }
@@ -638,10 +670,89 @@ function createKudosCard(k, index) {
   const fields = [
     ['card-emoji', k.emoji || '😎'], ['card-name', k.recipientName],
     ['card-category', CATS[k.category] || 'Kudos'], ['card-message', k.message],
-    ['card-date', `${new Date(k.submittedAt).toLocaleDateString()} · ${k.status}`]
+    ['card-date', new Date(k.submittedAt).toLocaleDateString()]
   ];
   fields.forEach(([className, text]) => { const el = document.createElement('div'); el.className = className; el.textContent = text; card.appendChild(el); });
   return card;
+}
+
+function groupKudosByRecipient(kudos) {
+  const groups = new Map();
+  kudos.forEach(item => {
+    const key = item.recipientName.trim().toLocaleLowerCase();
+    if (!groups.has(key)) groups.set(key, { recipientName: item.recipientName.trim(), items: [] });
+    groups.get(key).items.push(item);
+  });
+  return [...groups.values()];
+}
+
+function createRecipientGroup(group, index) {
+  if (group.items.length === 1) return createKudosCard(group.items[0], index);
+
+  const details = document.createElement('details');
+  details.className = 'card group-card';
+  details.style.animationDelay = `${index * 0.08}s`;
+  const summary = document.createElement('summary');
+  const emojiEl = document.createElement('div');
+  emojiEl.className = 'card-emoji';
+  emojiEl.textContent = group.items[0].emoji || '😎';
+  const copy = document.createElement('div');
+  copy.className = 'group-summary-copy';
+  const name = document.createElement('div');
+  name.className = 'card-name';
+  name.textContent = group.recipientName;
+  const count = document.createElement('div');
+  count.className = 'kudos-count';
+  count.textContent = `${group.items.length} kudos received`;
+  copy.append(name, count);
+  const toggle = document.createElement('span');
+  toggle.className = 'group-toggle';
+  toggle.setAttribute('aria-hidden', 'true');
+  summary.append(emojiEl, copy, toggle);
+
+  const items = document.createElement('div');
+  items.className = 'group-items';
+  group.items.forEach(k => {
+    const item = document.createElement('div');
+    item.className = 'group-item';
+    const fields = [
+      ['card-category', CATS[k.category] || 'Kudos'],
+      ['card-message', k.message],
+      ['card-date', new Date(k.submittedAt).toLocaleDateString()]
+    ];
+    fields.forEach(([className, text]) => {
+      const el = document.createElement('div');
+      el.className = className; el.textContent = text; item.appendChild(el);
+    });
+    items.appendChild(item);
+  });
+  details.append(summary, items);
+  return details;
+}
+
+async function exportKudos() {
+  const button = document.getElementById('exportButton');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${API_BASE}/admin/kudos/export`, {
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    if (response.status === 401) { await logoutAdmin(); showAdminLogin(); return; }
+    if (!response.ok) throw new Error();
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
+    const fileName = match ? decodeURIComponent(match[1].replace(/\"/g, '')) : 'kudos-export.xlsx';
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = fileName;
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    showToast('Excel export downloaded.');
+  } catch {
+    showToast('Unable to export kudos. Please try again.', true);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function submitKudos() {
