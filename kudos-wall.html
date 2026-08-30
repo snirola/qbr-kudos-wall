@@ -131,6 +131,11 @@ body {
   background: #fafbfc;
 }
 .form-group textarea { min-height: 90px; resize: vertical; }
+.field-hint {
+  display: flex; justify-content: space-between; gap: 12px; margin-top: 7px;
+  color: #666; font-size: 12px; font-weight: 500;
+}
+.field-hint.at-limit { color: #b45309; font-weight: 700; }
 .category-options { 
   display: grid; 
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
@@ -492,7 +497,11 @@ body {
 
     <div class="form-group">
       <label>What Did They Do?</label>
-      <textarea id="messageInput" placeholder="One sentence - keep it punchy! What made a difference?"></textarea>
+      <textarea id="messageInput" maxlength="500" aria-describedby="messageLimit" placeholder="One sentence - keep it punchy! What made a difference?"></textarea>
+      <div class="field-hint" id="messageLimit">
+        <span>Maximum limit is 500 characters</span>
+        <span id="messageCount">0 / 500</span>
+      </div>
       <div class="error" id="messageError"></div>
     </div>
 
@@ -779,9 +788,17 @@ async function submitKudos() {
 function clearForm() {
   document.getElementById('nameInput').value = '';
   document.getElementById('messageInput').value = '';
+  updateMessageCount();
   category = 'hero'; emoji = '😎';
   document.querySelectorAll('.category-btn').forEach((b, i) => b.classList.toggle('selected', i === 0));
   document.querySelectorAll('.emoji-btn').forEach((b, i) => b.classList.toggle('selected', i === 0));
+}
+
+function updateMessageCount() {
+  const input = document.getElementById('messageInput');
+  const length = input.value.length;
+  document.getElementById('messageCount').textContent = `${length} / 500`;
+  document.getElementById('messageLimit').classList.toggle('at-limit', length === 500);
 }
 
 document.querySelectorAll('.category-btn').forEach(btn => btn.addEventListener('click', e => {
@@ -792,6 +809,7 @@ document.querySelectorAll('.emoji-btn').forEach(btn => btn.addEventListener('cli
   document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
   e.currentTarget.classList.add('selected'); emoji = e.currentTarget.dataset.emoji;
 }));
+document.getElementById('messageInput').addEventListener('input', updateMessageCount);
 document.getElementById('passwordInput').addEventListener('keypress', e => { if (e.key === 'Enter') loginAdmin(); });
 </script>
 
