@@ -125,6 +125,31 @@ app.MapGet("/api/admin/kudos", async (HttpRequest request, NpgsqlDataSource data
     return Results.Ok(await KudosStore.ListAllAsync(dataSource));
 });
 
+app.MapGet("/api/admin/storage", async (
+    HttpRequest request, NpgsqlDataSource dataSource, IConfiguration configuration) =>
+{
+    if (!await SessionTokens.IsAdminAsync(request, dataSource)) return Results.Unauthorized();
+
+    await using var command = dataSource.CreateCommand("""
+        SELECT (SELECT COUNT(*) FROM kudos), pg_database_size(current_database());
+        """);
+    await using var reader = await command.ExecuteReaderAsync();
+    await reader.ReadAsync();
+    var recordCount = reader.GetInt64(0);
+    var usedBytes = reader.GetInt64(1);
+    var planLimitBytes = configuration.GetValue<long?>("Storage:PlanLimitBytes") ?? 536_870_912;
+    var warningPercent = configuration.GetValue<int?>("Storage:WarningPercent") ?? 80;
+    var warningBytes = planLimitBytes * warningPercent / 100;
+    return Results.Ok(new
+    {
+        recordCount,
+        usedBytes,
+        planLimitBytes,
+        warningPercent,
+        shouldCleanData = usedBytes >= warningBytes
+    });
+});
+
 app.MapGet("/api/admin/kudos/export", async (HttpRequest request, NpgsqlDataSource dataSource) =>
 {
     if (!await SessionTokens.IsAdminAsync(request, dataSource)) return Results.Unauthorized();

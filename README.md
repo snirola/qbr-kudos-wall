@@ -75,7 +75,15 @@ Vercel detects the root `Dockerfile.vercel` and deploys the static page and ASP.
 - `POST /api/admin/login`
 - `POST /api/admin/logout`
 - `GET /api/admin/kudos`
+- `GET /api/admin/storage`
 - `GET /api/admin/kudos/export`
 - `POST /api/admin/kudos/import`
 - `PATCH /api/admin/kudos/{id}/status`
 - `DELETE /api/admin/kudos/{id}`
+
+## Submission and storage limits
+
+- Public submissions are limited to 10 requests per IP address every 10 minutes.
+- First name and last name accept up to 100 characters each; feedback accepts up to 500 characters.
+- There is no application-level maximum number of kudos rows. The deployed database storage allowance is the limiting factor.
+- View Wall displays the live record count and database size. It shows a cleanup warning at 80% of the configured 0.5 GB storage allowance; both values can be overridden with `Storage__PlanLimitBytes` and `Storage__WarningPercent`.

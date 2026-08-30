@@ -241,6 +241,13 @@ body {
 .wall-header h2 { margin-bottom: 0 !important; }
 .wall-header .btn { flex: 0 0 auto; }
 .wall-actions { display: flex; align-items: center; gap: 10px; }
+.storage-status { color: #666; font-size: 12px; margin: -18px 0 20px; }
+.storage-warning {
+  background: #fff7ed; border: 1px solid #fb923c; border-radius: 10px;
+  color: #9a3412; font-size: 13px; font-weight: 600; line-height: 1.5;
+  margin: -8px 0 22px; padding: 12px 14px;
+}
+.storage-warning[hidden] { display: none; }
 .btn:disabled { cursor: wait; opacity: 0.65; transform: none; box-shadow: none; }
 .wall::-webkit-scrollbar { width: 10px; }
 .wall::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
@@ -559,6 +566,10 @@ body {
         <button class="btn" onclick="logoutAdmin()">Sign out</button>
       </div>
     </div>
+    <div class="storage-status" id="storageStatus" aria-live="polite"></div>
+    <div class="storage-warning" id="storageWarning" role="alert" hidden>
+      ⚠️ Database storage is approaching its configured limit. Export the kudos to Excel, then clean old records to free space.
+    </div>
     <div class="wall" id="wallContainer">
       <div class="empty"><div class="empty-icon">🌟</div>Loading kudos...</div>
     </div>
@@ -668,16 +679,35 @@ async function renderWall() {
   const container = document.getElementById('wallContainer');
   container.replaceChildren(createEmptyState('Loading kudos...'));
   try {
-    const response = await fetch(`${API_BASE}/admin/kudos`, { headers: { Authorization: `Bearer ${authToken}` } });
+    const headers = { Authorization: `Bearer ${authToken}` };
+    const [response, storageResponse] = await Promise.all([
+      fetch(`${API_BASE}/admin/kudos`, { headers }),
+      fetch(`${API_BASE}/admin/storage`, { headers })
+    ]);
     if (response.status === 401) { await logoutAdmin(); showAdminLogin(); return; }
     if (!response.ok) throw new Error();
     const all = await response.json();
+    if (storageResponse.ok) updateStorageStatus(await storageResponse.json());
     if (all.length === 0) { container.replaceChildren(createEmptyState('No kudos yet.')); return; }
     const groups = groupKudosByRecipient(all);
     container.replaceChildren(...groups.map((group, i) => createRecipientGroup(group, i)));
   } catch {
     container.replaceChildren(createEmptyState('Unable to load kudos.'));
   }
+}
+
+function updateStorageStatus(storage) {
+  const percent = storage.planLimitBytes > 0 ? (storage.usedBytes / storage.planLimitBytes) * 100 : 0;
+  document.getElementById('storageStatus').textContent =
+    `${Number(storage.recordCount).toLocaleString()} records · ${formatBytes(storage.usedBytes)} database used · ${percent.toFixed(1)}% of configured storage limit`;
+  document.getElementById('storageWarning').hidden = !storage.shouldCleanData;
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes);
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(value / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 function createEmptyState(message) {
