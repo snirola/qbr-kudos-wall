@@ -78,6 +78,7 @@ Vercel detects the root `Dockerfile.vercel` and deploys the static page and ASP.
 - `GET /api/admin/storage`
 - `GET /api/admin/kudos/export`
 - `POST /api/admin/kudos/import`
+- `DELETE /api/admin/kudos` (all records; available only at the configured storage threshold)
 - `PATCH /api/admin/kudos/{id}/status`
 - `DELETE /api/admin/kudos/{id}`
 
@@ -87,3 +88,4 @@ Vercel detects the root `Dockerfile.vercel` and deploys the static page and ASP.
 - First name and last name accept up to 100 characters each; feedback accepts up to 500 characters.
 - There is no application-level maximum number of kudos rows. The deployed database storage allowance is the limiting factor.
 - View Wall displays the live record count and database size. It shows a cleanup warning at 80% of the configured 0.5 GB storage allowance; both values can be overridden with `Storage__PlanLimitBytes` and `Storage__WarningPercent`.
+- The View Wall's **Delete records from DB** button remains disabled below that threshold. At or above it, an administrator can confirm permanent deletion of all kudos; the API independently enforces the threshold.

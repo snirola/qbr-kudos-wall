@@ -248,7 +248,9 @@ body {
   margin: -8px 0 22px; padding: 12px 14px;
 }
 .storage-warning[hidden] { display: none; }
-.btn:disabled { cursor: wait; opacity: 0.65; transform: none; box-shadow: none; }
+.btn-danger { border-color: #dc2626; color: #b91c1c; }
+.btn-danger:not(:disabled):hover { background: #dc2626; border-color: #dc2626; color: white; }
+.btn:disabled { cursor: not-allowed; opacity: 0.5; transform: none; box-shadow: none; }
 .wall::-webkit-scrollbar { width: 10px; }
 .wall::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
 .wall::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #8B5CF6 0%, #3B82F6 100%); border-radius: 10px; }
@@ -563,12 +565,13 @@ body {
       <h2 style="color:#0F1B3E;margin-bottom:28px;font-size:26px;font-weight:700;">🏆 Customer Heroes & Team Legends</h2>
       <div class="wall-actions">
         <button class="btn btn-primary" id="exportButton" onclick="exportKudos()">📊 Export to Excel</button>
+        <button class="btn btn-danger" id="deleteRecordsButton" onclick="deleteAllRecords()" disabled>Delete records from DB</button>
         <button class="btn" onclick="logoutAdmin()">Sign out</button>
       </div>
     </div>
     <div class="storage-status" id="storageStatus" aria-live="polite"></div>
     <div class="storage-warning" id="storageWarning" role="alert" hidden>
-      ⚠️ Database storage is approaching its configured limit. Export the kudos to Excel, then clean old records to free space.
+      ⚠️ Database storage has reached the cleanup threshold. Export the kudos to Excel before using “Delete records from DB”.
     </div>
     <div class="wall" id="wallContainer">
       <div class="empty"><div class="empty-icon">🌟</div>Loading kudos...</div>
@@ -677,6 +680,7 @@ function closePasswordModal() {
 
 async function renderWall() {
   const container = document.getElementById('wallContainer');
+  document.getElementById('deleteRecordsButton').disabled = true;
   container.replaceChildren(createEmptyState('Loading kudos...'));
   try {
     const headers = { Authorization: `Bearer ${authToken}` };
@@ -701,6 +705,47 @@ function updateStorageStatus(storage) {
   document.getElementById('storageStatus').textContent =
     `${Number(storage.recordCount).toLocaleString()} records · ${formatBytes(storage.usedBytes)} database used · ${percent.toFixed(1)}% of configured storage limit`;
   document.getElementById('storageWarning').hidden = !storage.shouldCleanData;
+  const deleteButton = document.getElementById('deleteRecordsButton');
+  deleteButton.disabled = !storage.shouldCleanData;
+  deleteButton.dataset.recordCount = storage.recordCount;
+  deleteButton.title = storage.shouldCleanData
+    ? 'Permanently delete all kudos records from the database'
+    : `Available when database usage reaches ${storage.warningPercent}%`;
+}
+
+async function deleteAllRecords() {
+  const button = document.getElementById('deleteRecordsButton');
+  if (button.disabled) return;
+
+  const recordCount = Number(button.dataset.recordCount || 0);
+  const confirmed = window.confirm(
+    `Permanently delete all ${recordCount.toLocaleString()} kudos records? This cannot be undone. Export to Excel first if you need a backup.`
+  );
+  if (!confirmed) return;
+
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Deleting records...';
+  try {
+    const response = await fetch(`${API_BASE}/admin/kudos`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    if (response.status === 401) { await logoutAdmin(); showAdminLogin(); return; }
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showToast(result.error || 'Records could not be deleted.', true);
+      await renderWall();
+      return;
+    }
+    showToast(`${Number(result.deleted).toLocaleString()} records deleted from the database.`);
+    await renderWall();
+  } catch {
+    showToast('Unable to delete records. Please try again.', true);
+    await renderWall();
+  } finally {
+    button.textContent = originalText;
+  }
 }
 
 function formatBytes(bytes) {

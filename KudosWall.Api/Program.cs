@@ -204,6 +204,45 @@ app.MapPost("/api/admin/kudos/import", async (
     return Results.Ok(new { imported = request.Kudos.Count });
 });
 
+app.MapDelete("/api/admin/kudos", async (
+    HttpRequest request, NpgsqlDataSource dataSource, IConfiguration configuration) =>
+{
+    if (!await SessionTokens.IsAdminAsync(request, dataSource)) return Results.Unauthorized();
+
+    var planLimitBytes = configuration.GetValue<long?>("Storage:PlanLimitBytes") ?? 536_870_912;
+    var warningPercent = configuration.GetValue<int?>("Storage:WarningPercent") ?? 80;
+    var warningBytes = planLimitBytes * warningPercent / 100;
+
+    await using var connection = await dataSource.OpenConnectionAsync();
+    long recordCount;
+    long usedBytes;
+    await using (var storageCommand = new NpgsqlCommand("""
+        SELECT (SELECT COUNT(*) FROM kudos), pg_database_size(current_database());
+        """, connection))
+    await using (var reader = await storageCommand.ExecuteReaderAsync())
+    {
+        await reader.ReadAsync();
+        recordCount = reader.GetInt64(0);
+        usedBytes = reader.GetInt64(1);
+    }
+
+    if (usedBytes < warningBytes)
+        return Results.Conflict(new
+        {
+            error = $"Records can only be deleted after database usage reaches {warningPercent}%.",
+            usedBytes,
+            warningBytes
+        });
+
+    if (recordCount > 0)
+    {
+        await using var truncateCommand = new NpgsqlCommand("TRUNCATE TABLE kudos;", connection);
+        await truncateCommand.ExecuteNonQueryAsync();
+    }
+
+    return Results.Ok(new { deleted = recordCount });
+});
+
 app.MapPatch("/api/admin/kudos/{id:guid}/status", async (
     Guid id, UpdateStatusRequest request, HttpRequest httpRequest, NpgsqlDataSource dataSource) =>
 {
